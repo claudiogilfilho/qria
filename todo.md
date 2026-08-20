@@ -17,4 +17,5 @@
 - [x] Criar testes Vitest para regras de quiz, validação dos dados e fluxos críticos do servidor.
 - [x] Adicionar testes Vitest para validação dos procedimentos de início de marca e registro de respostas inválidas.
 - [x] Adicionar testes Vitest para criação de marca e sessão, seleção final da direção e leitura do workspace persistido.
+- [x] Renomear a experiência do MVP de MarcaQuiz para QRIA em títulos, navegação, acesso e metadados do aplicativo.
 - [ ] Validar a experiência ponta a ponta no navegador, corrigir eventuais falhas e salvar uma versão de entrega do MVP.

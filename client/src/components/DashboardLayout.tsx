@@ -179,7 +179,7 @@ function DashboardLayoutContent({
               {!isCollapsed ? (
                 <div className="flex items-center gap-2 min-w-0">
                     <span className="font-display text-xl tracking-[-0.03em] truncate">
-                    MarcaQuiz
+                    QRIA
                   </span>
                 </div>
               ) : null}
@@ -258,7 +258,7 @@ function DashboardLayoutContent({
               <div className="flex items-center gap-3">
                 <div className="flex flex-col gap-1">
                   <span className="tracking-tight text-foreground">
-                    {activeMenuItem?.label ?? "MarcaQuiz"}
+                    {activeMenuItem?.label ?? "QRIA"}
                   </span>
                 </div>
               </div>
