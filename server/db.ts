@@ -89,8 +89,15 @@ export async function getUserByOpenId(openId: string) {
   return result.length > 0 ? result[0] : undefined;
 }
 
-function getInsertId(result: unknown) {
-  return Number((result as { insertId?: number }).insertId ?? 0);
+export function getInsertId(result: unknown) {
+  const metadata = Array.isArray(result) ? result[0] : result;
+  const insertId = Number((metadata as { insertId?: unknown } | undefined)?.insertId);
+
+  if (!Number.isSafeInteger(insertId) || insertId < 1) {
+    throw new Error("Não foi possível obter o identificador da inserção no banco de dados.");
+  }
+
+  return insertId;
 }
 
 async function requireDb() {

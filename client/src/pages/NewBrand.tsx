@@ -15,7 +15,13 @@ export default function NewBrand() {
   const [description, setDescription] = useState("");
   const [differentials, setDifferentials] = useState("");
   const createBrand = trpc.brand.start.useMutation({
-    onSuccess: data => setLocation(`/marca/${data.brandId}`),
+    onSuccess: data => {
+      if (!Number.isInteger(data.brandId) || data.brandId < 1) {
+        toast.error("Não foi possível iniciar a marca. Tente novamente em instantes.");
+        return;
+      }
+      setLocation(`/marca/${data.brandId}`);
+    },
     onError: error => toast.error(error.message),
   });
 

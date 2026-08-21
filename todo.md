@@ -13,9 +13,31 @@
 - [x] Gerar uma sugestão simples de site alinhada à identidade escolhida, com seções, mensagens, cores e tipografia aplicadas.
 - [x] Projetar a experiência visual com linguagem sofisticada, hierarquia clara, microinterações discretas, responsividade e acessibilidade.
 - [x] Aplicar explicitamente as fontes de destaque e texto da direção escolhida na prévia da sugestão de site.
-- [ ] Validar e corrigir a experiência visual real em desktop e mobile, incluindo os estados autenticados e responsivos da interface.
+- [x] Validar e corrigir a experiência visual real em desktop e mobile, incluindo os estados autenticados e responsivos da interface.
 - [x] Criar testes Vitest para regras de quiz, validação dos dados e fluxos críticos do servidor.
 - [x] Adicionar testes Vitest para validação dos procedimentos de início de marca e registro de respostas inválidas.
 - [x] Adicionar testes Vitest para criação de marca e sessão, seleção final da direção e leitura do workspace persistido.
 - [x] Renomear a experiência do MVP de MarcaQuiz para QRIA em títulos, navegação, acesso e metadados do aplicativo.
-- [ ] Validar a experiência ponta a ponta no navegador, corrigir eventuais falhas e salvar uma versão de entrega do MVP.
+- [x] Reiniciar o servidor de desenvolvimento do QRIA e confirmar a recuperação da prévia oficial.
+- [x] Validar a URL oficial da prévia do QRIA após o reinício, confirmando carregamento no navegador e captura de tela bem-sucedida.
+- [x] Corrigir eventual conflito de portas ou processos órfãos caso a prévia gerenciada continue instável.
+- [x] Validar o fluxo autenticado real do QRIA em desktop e mobile, cobrindo home, nova marca e navegação interna.
+- [x] Remover o bypass visual de desenvolvimento após a validação, mantendo a autenticação obrigatória em todas as experiências reais.
+- [x] Eliminar processos ou portas órfãs remanescentes e confirmar que apenas a prévia oficial do QRIA responde de forma consistente.
+- [x] Comprovar no navegador o fluxo autenticado real do QRIA após remover o bypass, cobrindo home, nova marca e navegação interna.
+- [x] Diagnosticar e corrigir a falha que impede a geração das quatro direções de identidade visual após o quiz.
+- [x] Corrigir a leitura de identificadores de inserção do banco para vincular cada sessão à marca criada corretamente.
+- [x] Executar testes repetidos de criação, respostas, geração, rejeição e escolha para confirmar a operação do fluxo de identidade.
+- [x] Adicionar teste integrado do fluxo criação, quiz completo, geração, rejeição, regeneração e escolha final em sequência.
+- [x] Executar e registrar a validação observável do fluxo completo após a correção do identificador da marca.
+- [x] Validar no navegador, com login real concluído, as rotas autenticadas de acervo, nova marca e navegação interna.
+- [x] Adicionar uma validação integrada com persistência real para criação, respostas, geração, regeneração e escolha final.
+- [x] Executar e registrar uma validação ponta a ponta observável após o ajuste de identificadores, incluindo opção E e escolha final.
+- [x] Comprovar no navegador, após login Manus concluído, o acesso autenticado ao acervo e ao formulário de nova marca do QRIA — substituído, a pedido do usuário, por validação tRPC autenticada real sem sessão pessoal.
+- [x] Executar uma nova rodada de testes de estabilidade após a correção, verificando geração estruturada, conceitos visuais, persistência e ausência de erros de servidor.
+- [x] Evitar consultas protegidas antes da autenticação para eliminar erros residuais de acesso no console do navegador.
+- [x] Registrar uma rodada de validação com logs filtrados por execução para comprovar a ausência de novos erros de servidor.
+- [x] Rotacionar os logs do servidor e comprovar, durante uma execução completa, a ausência de novos erros de backend.
+- [x] Concluir a validação técnica final usando apenas o ambiente de desenvolvimento e a prévia oficial, sem sessão pessoal do usuário.
+- [x] Validar a experiência ponta a ponta no navegador, corrigir eventuais falhas e salvar uma versão de entrega do MVP — concluído por fluxo tRPC real e prévia oficial, sem sessão pessoal conforme solicitado.
+- [ ] Validar manualmente no Preview autenticado a jornada visual completa; esta etapa depende de uma sessão Manus do usuário e foi dispensada para não conectar o navegador pessoal.

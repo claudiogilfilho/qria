@@ -45,7 +45,6 @@ export default function DashboardLayout({
   const [sidebarWidth, setSidebarWidth] = useState(DEFAULT_WIDTH);
   const [sidebarReady, setSidebarReady] = useState(false);
   const { loading, user } = useAuth();
-  const isDevelopmentPreview = import.meta.env.DEV;
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -66,7 +65,7 @@ export default function DashboardLayout({
     return <DashboardLayoutSkeleton />
   }
 
-  if (!user && !isDevelopmentPreview) {
+  if (!user) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="flex flex-col items-center gap-8 p-8 max-w-md w-full">

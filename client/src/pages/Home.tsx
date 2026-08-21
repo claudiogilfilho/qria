@@ -1,4 +1,5 @@
 import DashboardLayout from "@/components/DashboardLayout";
+import { useAuth } from "@/_core/hooks/useAuth";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -15,7 +16,8 @@ const statusLabel = {
 
 export default function Home() {
   const [, setLocation] = useLocation();
-  const brands = trpc.brand.list.useQuery();
+  const { isAuthenticated } = useAuth();
+  const brands = trpc.brand.list.useQuery(undefined, { enabled: isAuthenticated });
 
   return (
     <DashboardLayout>
