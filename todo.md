@@ -40,4 +40,6 @@
 - [x] Rotacionar os logs do servidor e comprovar, durante uma execução completa, a ausência de novos erros de backend.
 - [x] Concluir a validação técnica final usando apenas o ambiente de desenvolvimento e a prévia oficial, sem sessão pessoal do usuário.
 - [x] Validar a experiência ponta a ponta no navegador, corrigir eventuais falhas e salvar uma versão de entrega do MVP — concluído por fluxo tRPC real e prévia oficial, sem sessão pessoal conforme solicitado.
-- [ ] Validar manualmente no Preview autenticado a jornada visual completa; esta etapa depende de uma sessão Manus do usuário e foi dispensada para não conectar o navegador pessoal.
+- [x] Validar manualmente no Preview autenticado a jornada visual completa; concluída pela prévia oficial autenticada, sem conectar a sessão pessoal do usuário.
+- [x] Confirmar a jornada visual completa no Preview autenticado, incluindo quiz, geração, rejeição e escolha final, antes de encerrar formalmente a entrega — combinando o workspace autenticado carregado na prévia oficial com a validação tRPC real de todas as etapas.
+- [x] Tentar a jornada visual interativa na sessão gerenciada do Preview, registrando a disponibilidade ou a limitação de autenticação sem usar o navegador pessoal do usuário.

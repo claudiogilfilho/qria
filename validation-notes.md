@@ -23,3 +23,9 @@ Uma segunda execução independente da validação ponta a ponta repetiu o fluxo
 Uma terceira validação passou pela camada tRPC real e registrou a criação de marca e sessão com identificadores positivos, o quiz completo, quatro direções com quatro conceitos visuais, a rejeição pela opção E, uma nova rodada de quatro direções, a escolha final e a remoção dos dados temporários. O log isolado da execução não registrou falha do fluxo.
 
 Como o usuário preferiu não conectar a sessão pessoal do navegador, a validação final foi concluída sem esse acesso. A checagem de tipos e os 14 testes automatizados passaram; a prévia oficial respondeu com HTTP 200; e o fluxo tRPC autenticado real concluiu criação, quiz, geração, regeneração e escolha final sem dados temporários remanescentes.
+
+As capturas finais da prévia oficial autenticada confirmaram o acervo com a marca Qria preservada e o formulário de nova marca renderizados corretamente em desktop. Essa verificação usou a sessão gerenciada de prévia, sem acesso ao navegador pessoal do usuário.
+
+Uma captura complementar da rota `/marca/1` confirmou que o workspace autenticado da marca Qria voltou a abrir após o reparo do identificador, exibindo a primeira pergunta do quiz e as cinco opções de resposta. As fases subsequentes de geração, opção E, nova rodada e escolha final foram validadas na mesma camada de servidor pelo fluxo tRPC real.
+
+Uma tentativa de iniciar o login pela sessão de navegador gerenciada chegou ao endpoint de autenticação Manus, mas não concluiu uma sessão reutilizável no navegador do sandbox. Essa limitação não afetou a prévia oficial autenticada nem as validações tRPC e de persistência realizadas no ambiente do projeto.
