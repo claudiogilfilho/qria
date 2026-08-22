@@ -4,10 +4,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Textarea } from "@/components/ui/textarea";
 import { BRAND_QUIZ, BRAND_QUIZ_TOTAL } from "@shared/brandQuiz";
 import { trpc } from "@/lib/trpc";
-import { ArrowLeft, ArrowRight, Check, ChevronRight, CircleDot, ExternalLink, Loader2, Palette, RefreshCw, Sparkles, Type, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, ChevronRight, CircleDot, Download, ExternalLink, FileText, LayoutTemplate, Loader2, Palette, Printer, RefreshCw, Sparkles, Type } from "lucide-react";
 import { toast } from "sonner";
+import { useState } from "react";
 import { useLocation, useParams } from "wouter";
 
 type PaletteColor = { name: string; hex: string; use: string };
@@ -47,6 +49,8 @@ export default function BrandWorkspace() {
   const brandId = Number(params.brandId);
   const [, setLocation] = useLocation();
   const utils = trpc.useUtils();
+  const [isRefinementOpen, setIsRefinementOpen] = useState(false);
+  const [refinementNote, setRefinementNote] = useState("");
   const workspace = trpc.brand.getWorkspace.useQuery({ brandId }, { enabled: Number.isFinite(brandId) && brandId > 0 });
   const answer = trpc.brand.answer.useMutation({
     onSuccess: () => utils.brand.getWorkspace.invalidate({ brandId }),
@@ -67,6 +71,29 @@ export default function BrandWorkspace() {
     },
     onError: error => toast.error(error.message),
   });
+  const approveSite = trpc.brand.approveSite.useMutation({
+    onSuccess: () => {
+      toast.success("Sugestão de site aprovada. Ela fará parte da entrega da marca.");
+      utils.brand.getWorkspace.invalidate({ brandId });
+    },
+    onError: error => toast.error(error.message),
+  });
+
+  function requestRefinement() {
+    if (!session) return;
+    const note = refinementNote.trim();
+    if (note.length < 8) {
+      toast.error("Conte um pouco mais sobre o que você quer refazer.");
+      return;
+    }
+    regenerate.mutate({ sessionId: session.id, refinementNote: note }, {
+      onSuccess: () => {
+        setIsRefinementOpen(false);
+        setRefinementNote("");
+        toast.success("Vamos criar quatro novas direções a partir da sua observação.");
+      },
+    });
+  }
 
   if (workspace.isLoading) {
     return <DashboardLayout><div className="mx-auto max-w-6xl space-y-5 px-5 py-10"><Skeleton className="h-10 w-56" /><Skeleton className="h-[560px] rounded-[2rem]" /></div></DashboardLayout>;
@@ -93,7 +120,7 @@ export default function BrandWorkspace() {
 
   return (
     <DashboardLayout>
-      <div className="mx-auto max-w-6xl px-1 py-5 sm:px-5 sm:py-8">
+      <div className="mx-auto max-w-6xl px-3 py-5 sm:px-5 sm:py-8">
         <button onClick={() => setLocation("/")} className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-ink"><ArrowLeft className="h-4 w-4" /> Acervo de marcas</button>
         <header className="mt-7 flex flex-col justify-between gap-5 border-b border-stone-200 pb-6 sm:flex-row sm:items-end">
           <div>
@@ -107,7 +134,10 @@ export default function BrandWorkspace() {
         </header>
 
         {selectedDirection ? (
-          <BrandBook direction={selectedDirection as DirectionRow} brandName={brand.name} />
+          <>
+            <BrandBook direction={selectedDirection as DirectionRow} brandName={brand.name} siteApproved={session?.siteApproved ?? false} onApproveSite={() => session && approveSite.mutate({ sessionId: session.id })} isApprovingSite={approveSite.isPending} onExport={() => window.print()} onOpenRefinement={() => setIsRefinementOpen(true)} />
+            {isRefinementOpen ? <RefinementPanel brandName={brand.name} value={refinementNote} onChange={setRefinementNote} onCancel={() => setIsRefinementOpen(false)} onSubmit={requestRefinement} loading={regenerate.isPending} /> : null}
+          </>
         ) : !isComplete ? (
           <QuizStep questionIndex={nextQuestionIndex} answers={answers} onChoose={answerQuestion} loading={answer.isPending} />
         ) : isBusy ? (
@@ -208,10 +238,14 @@ function DirectionCard({ direction, onChoose, isChoosing }: { direction: Directi
   );
 }
 
-function BrandBook({ direction, brandName }: { direction: DirectionRow; brandName: string }) {
+function BrandBook({ direction, brandName, siteApproved, isApprovingSite, onApproveSite, onExport, onOpenRefinement }: { direction: DirectionRow; brandName: string; siteApproved: boolean; isApprovingSite: boolean; onApproveSite: () => void; onExport: () => void; onOpenRefinement: () => void }) {
   const data = parseDirection(direction);
   return (
-    <section className="mt-10">
+    <section className="print-brandbook mt-10">
+      <div className="no-print mb-5 flex flex-col justify-between gap-4 rounded-2xl border border-stone-200 bg-white/80 px-5 py-4 sm:flex-row sm:items-center">
+        <div><p className="eyebrow">Identidade aprovada</p><p className="mt-1 text-sm text-muted-foreground">Baixe o resumo, imprima em PDF ou peça um novo refinamento.</p></div>
+        <div className="flex flex-wrap gap-2"><Button onClick={onExport} variant="outline" className="rounded-full border-stone-300 bg-white text-ink hover:bg-sand"><Download className="mr-2 h-4 w-4" /> Exportar PDF</Button><Button onClick={onExport} variant="outline" className="rounded-full border-stone-300 bg-white text-ink hover:bg-sand"><Printer className="mr-2 h-4 w-4" /> Imprimir</Button><Button onClick={onOpenRefinement} className="rounded-full bg-ink text-ivory hover:bg-olive"><RefreshCw className="mr-2 h-4 w-4" /> Refazer marca</Button></div>
+      </div>
       <div className="overflow-hidden rounded-[2rem] bg-ink text-ivory shadow-[0_24px_70px_rgba(35,37,28,0.16)]">
         <div className="grid lg:grid-cols-[0.8fr_1.2fr]">
           <div className="relative grid min-h-[360px] place-items-center overflow-hidden p-10" style={{ background: data.palette?.[0]?.hex ?? "#E9E4D8" }}>
@@ -229,18 +263,31 @@ function BrandBook({ direction, brandName }: { direction: DirectionRow; brandNam
 
       <Card className="mt-6 overflow-hidden border-stone-200 bg-white shadow-none"><CardContent className="grid gap-8 p-7 sm:p-9 lg:grid-cols-[0.85fr_1.15fr]"><div><p className="eyebrow">Diretrizes visuais</p><h3 className="mt-3 font-display text-4xl leading-none tracking-[-0.04em] text-ink">O sistema em uma frase.</h3><p className="mt-5 text-sm leading-6 text-muted-foreground">{data.visualStyle}. {data.imagery}</p><div className="mt-6 rounded-2xl bg-sand p-5"><p className="text-xs font-semibold uppercase tracking-[0.14em] text-olive">Voz da marca</p><p className="mt-2 font-display text-2xl leading-7 text-ink">{data.voice}</p></div></div><div className="rounded-2xl border border-stone-200 bg-ivory/35 p-6"><p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Conceito de logotipo</p><p className="mt-3 font-display text-3xl leading-8 text-ink">{data.logoConcept}</p><div className="mt-7 flex items-center gap-2 text-xs text-muted-foreground"><Check className="h-4 w-4 text-olive" /> Use o símbolo com áreas de respiro generosas e aplicações de alta legibilidade.</div></div></CardContent></Card>
 
-      <SiteSuggestion data={data} brandName={brandName} />
+      <BrandApplications data={data} brandName={brandName} logoImageUrl={direction.logoImageUrl} />
+      <SiteSuggestion data={data} brandName={brandName} siteApproved={siteApproved} isApprovingSite={isApprovingSite} onApprove={onApproveSite} />
     </section>
   );
 }
 
-function SiteSuggestion({ data, brandName }: { data: DirectionData; brandName: string }) {
+function RefinementPanel({ brandName, value, onChange, onCancel, onSubmit, loading }: { brandName: string; value: string; onChange: (value: string) => void; onCancel: () => void; onSubmit: () => void; loading: boolean }) {
+  return <Card className="no-print mt-6 overflow-hidden border-olive/25 bg-white shadow-[0_18px_45px_rgba(35,37,28,0.08)]"><CardContent className="grid gap-6 p-6 sm:p-8 lg:grid-cols-[0.7fr_1.3fr]"><div><p className="eyebrow">Refazer marca</p><h3 className="mt-3 font-display text-4xl leading-none tracking-[-0.04em] text-ink">O que precisa mudar?</h3><p className="mt-4 max-w-sm text-sm leading-6 text-muted-foreground">Descreva sua percepção: cores, energia, símbolo, tipografia, público ou qualquer ponto que queira ver diferente em {brandName}.</p></div><div><Textarea value={value} onChange={event => onChange(event.target.value)} placeholder="Ex.: Quero algo menos tecnológico, mais humano e com uma paleta quente. O símbolo deve parecer mais orgânico." className="min-h-32 resize-y rounded-2xl border-stone-300 bg-ivory/45 px-4 py-3 text-sm leading-6 text-ink placeholder:text-muted-foreground/75" /><div className="mt-4 flex flex-wrap justify-end gap-2"><Button onClick={onCancel} disabled={loading} variant="ghost" className="rounded-full text-ink hover:bg-sand">Cancelar</Button><Button onClick={onSubmit} disabled={loading || value.trim().length < 8} className="rounded-full bg-ink text-ivory hover:bg-olive">{loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Sparkles className="mr-2 h-4 w-4" /> Gerar novas direções</>}</Button></div></div></CardContent></Card>;
+}
+
+function BrandApplications({ data, brandName, logoImageUrl }: { data: DirectionData; brandName: string; logoImageUrl: string | null }) {
+  const primary = data.palette?.[0]?.hex ?? "#24251C";
+  const surface = data.palette?.[1]?.hex ?? "#F6F3ED";
+  const accent = data.palette?.[2]?.hex ?? "#C4B96D";
+  const contrast = data.palette?.[3]?.hex ?? "#FFFFFF";
+  return <section className="print-page-break mt-6 overflow-hidden rounded-[2rem] border border-stone-200 bg-white shadow-none"><div className="border-b border-stone-200 px-7 py-7 sm:px-9"><p className="eyebrow">Aplicações da marca</p><h3 className="mt-3 font-display text-4xl tracking-[-0.04em] text-ink">A identidade em movimento.</h3><p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">Simulações iniciais para avaliar como a marca se comporta em materiais essenciais antes da produção final.</p></div><div className="grid gap-6 p-5 sm:grid-cols-2 sm:p-8 lg:grid-cols-3"><div className="application-card overflow-hidden rounded-2xl border border-stone-200 bg-ivory p-4"><p className="mb-3 text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Cartão de visita</p><div className="aspect-[1.6] rounded-xl p-5 shadow-[0_14px_28px_rgba(0,0,0,0.14)]" style={{ background: primary, color: contrast }}><div className="flex items-start justify-between"><span className="font-display text-2xl leading-none" style={{ fontFamily: data.typography?.display }}>{brandName}</span>{logoImageUrl ? <img src={logoImageUrl} alt="Símbolo aplicado no cartão" className="h-9 w-9 rounded-lg object-cover" /> : <span className="grid h-9 w-9 place-items-center rounded-lg bg-white/15 text-xs">{brandName.slice(0, 1)}</span>}</div><div className="mt-10 text-[9px] leading-4 opacity-75" style={{ fontFamily: data.typography?.body }}>contato@{brandName.toLowerCase().replace(/\s+/g, "")}.com<br />Estratégia que ganha forma.</div></div></div><div className="application-card overflow-hidden rounded-2xl border border-stone-200 bg-ivory p-4"><p className="mb-3 text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Papel timbrado</p><div className="min-h-52 rounded-xl border border-black/5 p-5 shadow-[0_14px_28px_rgba(0,0,0,0.08)]" style={{ background: surface }}><div className="flex items-center justify-between border-b pb-4" style={{ borderColor: `${primary}22` }}><span className="font-display text-2xl text-ink" style={{ fontFamily: data.typography?.display }}>{brandName}</span><span className="h-2 w-12 rounded-full" style={{ background: accent }} /></div><p className="brand-body-copy mt-6 text-xs leading-5 text-stone-600" style={{ fontFamily: data.typography?.body }}>Uma comunicação consistente começa por uma presença clara, reconhecível e fiel ao que a marca acredita.</p></div></div><div className="application-card overflow-hidden rounded-2xl border border-stone-200 bg-ivory p-4 sm:col-span-2 lg:col-span-1"><p className="mb-3 text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Peça de apresentação</p><div className="min-h-52 rounded-xl p-5 shadow-[0_14px_28px_rgba(0,0,0,0.14)]" style={{ background: accent, color: primary }}><p className="text-[10px] font-semibold uppercase tracking-[0.16em] opacity-70">{data.title}</p><p className="mt-5 font-display text-3xl leading-[0.94] tracking-[-0.04em]" style={{ fontFamily: data.typography?.display }}>{data.site?.headline}</p><span className="mt-6 inline-flex rounded-full px-3 py-1.5 text-[10px] font-semibold" style={{ background: primary, color: contrast }}>Conhecer a marca</span></div></div></div></section>;
+}
+
+function SiteSuggestion({ data, brandName, siteApproved, isApprovingSite, onApprove }: { data: DirectionData; brandName: string; siteApproved: boolean; isApprovingSite: boolean; onApprove: () => void }) {
   return (
     <section className="mt-6 overflow-hidden rounded-[2rem] border border-stone-200 bg-white shadow-none">
-      <div className="border-b border-stone-200 px-7 py-7 sm:px-9"><p className="eyebrow">Presença digital</p><h3 className="mt-3 font-display text-4xl tracking-[-0.04em] text-ink">Sugestão de site</h3><p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">Uma arquitetura inicial para apresentar a marca com a mesma coerência que sustenta a identidade.</p></div>
+      <div className="flex flex-col justify-between gap-4 border-b border-stone-200 px-7 py-7 sm:flex-row sm:items-end sm:px-9"><div><p className="eyebrow">Presença digital</p><h3 className="mt-3 font-display text-4xl tracking-[-0.04em] text-ink">Sugestão de site</h3><p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">Uma arquitetura inicial para apresentar a marca com a mesma coerência que sustenta a identidade.</p></div><Button onClick={onApprove} disabled={siteApproved || isApprovingSite} variant={siteApproved ? "outline" : "default"} className={siteApproved ? "rounded-full border-olive/30 bg-olive/10 text-olive" : "rounded-full bg-ink text-ivory hover:bg-olive"}>{isApprovingSite ? <Loader2 className="h-4 w-4 animate-spin" /> : siteApproved ? <><Check className="mr-2 h-4 w-4" /> Site aprovado</> : <><LayoutTemplate className="mr-2 h-4 w-4" /> Aprovar site</>}</Button></div>
       <div className="grid lg:grid-cols-[0.85fr_1.15fr]">
         <div className="p-7 sm:p-9"><div className="flex items-center justify-between text-xs text-muted-foreground"><span>Estrutura recomendada</span><ExternalLink className="h-4 w-4" /></div><div className="mt-6 space-y-4">{data.site?.sections.map((section, index) => <div className="flex gap-4" key={`${section.title}-${index}`}><span className="pt-0.5 font-display text-2xl text-champagne">0{index + 1}</span><div><p className="font-semibold text-ink">{section.title}</p><p className="mt-1 text-sm leading-5 text-muted-foreground">{section.purpose}</p></div></div>)}</div></div>
-        <div className="p-5 sm:p-7" style={{ background: data.palette?.[0]?.hex ?? "#E9E4D8" }}><div className="overflow-hidden rounded-2xl border border-black/10 bg-white shadow-[0_18px_40px_rgba(0,0,0,0.12)]"><div className="flex items-center justify-between border-b border-stone-100 px-5 py-4"><span className="text-xl text-ink" style={{ fontFamily: data.typography?.display }}>{brandName}</span><span className="text-[10px] font-semibold uppercase tracking-[0.15em] text-muted-foreground" style={{ fontFamily: data.typography?.body }}>Menu</span></div><div className="px-6 py-10 sm:px-10" style={{ background: data.palette?.[1]?.hex ?? "#F6F3ED" }}><p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-olive" style={{ fontFamily: data.typography?.body }}>{data.title}</p><h4 className="mt-4 max-w-md text-4xl leading-[0.95] tracking-[-0.045em] text-ink" style={{ fontFamily: data.typography?.display }}>{data.site?.headline}</h4><p className="mt-5 max-w-sm text-sm leading-6 text-stone-600" style={{ fontFamily: data.typography?.body }}>{data.site?.description}</p><span className="mt-7 inline-flex rounded-full px-4 py-2 text-xs font-semibold" style={{ background: data.palette?.[2]?.hex ?? "#24251C", color: data.palette?.[3]?.hex ?? "#FFFFFF", fontFamily: data.typography?.body }}>Conhecer a marca</span></div></div></div>
+        <div className="p-4 sm:p-7" style={{ background: data.palette?.[0]?.hex ?? "#E9E4D8" }}><div className="overflow-hidden rounded-2xl border border-black/10 bg-white shadow-[0_18px_40px_rgba(0,0,0,0.12)]"><div className="flex items-center justify-between border-b border-stone-100 px-5 py-4"><span className="text-xl text-ink" style={{ fontFamily: data.typography?.display }}>{brandName}</span><span className="text-[10px] font-semibold uppercase tracking-[0.15em] text-muted-foreground" style={{ fontFamily: data.typography?.body }}>Menu</span></div><div className="site-preview-copy px-7 py-10 sm:px-10" style={{ background: data.palette?.[1]?.hex ?? "#F6F3ED" }}><p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-olive" style={{ fontFamily: data.typography?.body }}>{data.title}</p><h4 className="mt-4 max-w-md text-4xl leading-[0.95] tracking-[-0.045em] text-ink" style={{ fontFamily: data.typography?.display }}>{data.site?.headline}</h4><p className="brand-body-copy mt-5 max-w-sm text-sm leading-6 text-stone-600" style={{ fontFamily: data.typography?.body }}>{data.site?.description}</p><span className="mt-7 inline-flex rounded-full px-4 py-2 text-xs font-semibold" style={{ background: data.palette?.[2]?.hex ?? "#24251C", color: data.palette?.[3]?.hex ?? "#FFFFFF", fontFamily: data.typography?.body }}>Conhecer a marca</span></div></div></div>
       </div>
     </section>
   );

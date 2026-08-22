@@ -32,6 +32,8 @@ const db = vi.hoisted(() => ({
     session.status = "in_progress";
     return session;
   }),
+  saveRefinementNote: vi.fn(async (_ownerId: number, _sessionId: number, _refinementNote: string) => true),
+  setSiteApproval: vi.fn(async (_ownerId: number, _sessionId: number) => true),
   getDirectionsForSession: vi.fn(async (sessionId: number) => state.directions.filter(direction => direction.sessionId === sessionId).sort((left, right) => right.round - left.round || left.optionKey.localeCompare(right.optionKey))),
   getLatestRound: vi.fn(async (sessionId: number) => Math.max(0, ...state.directions.filter(direction => direction.sessionId === sessionId).map(direction => direction.round))),
   rejectLatestDirectionRound: vi.fn(async (_ownerId: number, sessionId: number) => {
@@ -43,6 +45,13 @@ const db = vi.hoisted(() => ({
     const session = state.sessions.find(item => item.ownerId === ownerId && item.id === sessionId)!;
     session.status = "generating";
     session.currentRound = currentRound;
+  }),
+  reopenSelectedBrandSession: vi.fn(async (_ownerId: number, sessionId: number) => {
+    const session = state.sessions.find(item => item.id === sessionId)!;
+    state.directions.filter(direction => direction.sessionId === sessionId && direction.round === session.currentRound && (direction.status === "selected" || direction.status === "proposed")).forEach(direction => { direction.status = "rejected"; });
+    session.status = "in_progress";
+    session.selectedDirectionId = null;
+    return true;
   }),
   restoreSessionAfterGenerationFailure: vi.fn(),
   createDirectionRound: vi.fn(async (sessionId: number, round: number, directions: Array<{ title: string; content: Record<string, unknown>; logoImageUrl: string | null }>) => {

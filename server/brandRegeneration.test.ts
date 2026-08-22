@@ -8,6 +8,7 @@ const db = vi.hoisted(() => ({
   getLatestRound: vi.fn(),
   rejectLatestDirectionRound: vi.fn(),
   setSessionGenerating: vi.fn(),
+  reopenSelectedBrandSession: vi.fn(),
   restoreSessionAfterGenerationFailure: vi.fn(),
   createDirectionRound: vi.fn(),
   createBrandWithSession: vi.fn(),
@@ -15,7 +16,9 @@ const db = vi.hoisted(() => ({
   getSessionByBrand: vi.fn(),
   listBrandsByOwner: vi.fn(),
   saveSessionAnswer: vi.fn(),
+  saveRefinementNote: vi.fn(),
   selectDirection: vi.fn(),
+  setSiteApproval: vi.fn(),
 }));
 
 const generation = vi.hoisted(() => ({
@@ -78,5 +81,30 @@ describe("brand.regenerate", () => {
     expect(db.setSessionGenerating).toHaveBeenCalledWith(7, 21, 2);
     expect(db.restoreSessionAfterGenerationFailure).toHaveBeenCalledWith(7, 21, 1);
     expect(db.createDirectionRound).not.toHaveBeenCalled();
+  });
+
+  it("reabre uma identidade escolhida e usa a observação livre na nova geração", async () => {
+    db.getOwnedSession.mockResolvedValue({
+      id: 21,
+      brandId: 8,
+      ownerId: 7,
+      currentRound: 1,
+      status: "selected",
+      answers: {
+        personalidade: "A", posicionamento: "B", publico: "C", linguagem_visual: "D", cor: "E",
+        tipografia: "A", simbolo: "B", diferenciacao: "C", experiencia_digital: "D", nao_negociavel: "E",
+      },
+    });
+    db.reopenSelectedBrandSession.mockResolvedValue(true);
+    db.saveRefinementNote.mockResolvedValue(true);
+    generation.generateBrandDirections.mockResolvedValue([{ title: "Nova direção" }]);
+    generation.generateLogoConcepts.mockResolvedValue(["https://example.test/logo.png"]);
+    const caller = appRouter.createCaller(createContext());
+
+    await caller.brand.regenerate({ sessionId: 21, refinementNote: "Quero uma direção mais humana e menos tecnológica." });
+
+    expect(db.saveRefinementNote).toHaveBeenCalledWith(7, 21, "Quero uma direção mais humana e menos tecnológica.");
+    expect(db.reopenSelectedBrandSession).toHaveBeenCalledWith(7, 21);
+    expect(generation.generateBrandDirections).toHaveBeenCalledWith(expect.objectContaining({ refinementNote: "Quero uma direção mais humana e menos tecnológica." }));
   });
 });

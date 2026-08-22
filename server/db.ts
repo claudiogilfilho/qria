@@ -1,4 +1,4 @@
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, inArray } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { brandDirections, brands, brandSessions, BrandDirectionRow, BrandSession, InsertUser, users } from "../drizzle/schema";
 import { ENV } from './_core/env';
@@ -157,6 +157,22 @@ export async function saveSessionAnswer(ownerId: number, sessionId: number, ques
   return { ...session, answers, status: "in_progress" as const };
 }
 
+export async function saveRefinementNote(ownerId: number, sessionId: number, refinementNote: string) {
+  const session = await getOwnedSession(ownerId, sessionId);
+  if (!session) return false;
+  const db = await requireDb();
+  await db.update(brandSessions).set({ refinementNote }).where(and(eq(brandSessions.id, sessionId), eq(brandSessions.ownerId, ownerId)));
+  return true;
+}
+
+export async function setSiteApproval(ownerId: number, sessionId: number) {
+  const session = await getOwnedSession(ownerId, sessionId);
+  if (!session) return false;
+  const db = await requireDb();
+  await db.update(brandSessions).set({ siteApproved: true }).where(and(eq(brandSessions.id, sessionId), eq(brandSessions.ownerId, ownerId)));
+  return true;
+}
+
 export async function getDirectionsForSession(sessionId: number) {
   const db = await requireDb();
   return db.select().from(brandDirections).where(eq(brandDirections.sessionId, sessionId)).orderBy(desc(brandDirections.round), brandDirections.optionKey);
@@ -176,6 +192,19 @@ export async function rejectLatestDirectionRound(ownerId: number, sessionId: num
   const db = await requireDb();
   await db.update(brandDirections).set({ status: "rejected" })
     .where(and(eq(brandDirections.sessionId, sessionId), eq(brandDirections.round, latestRound), eq(brandDirections.status, "proposed")));
+  return true;
+}
+
+export async function reopenSelectedBrandSession(ownerId: number, sessionId: number) {
+  const session = await getOwnedSession(ownerId, sessionId);
+  if (!session) return false;
+  const db = await requireDb();
+  await db.transaction(async tx => {
+    await tx.update(brandDirections).set({ status: "rejected" })
+      .where(and(eq(brandDirections.sessionId, sessionId), eq(brandDirections.round, session.currentRound), inArray(brandDirections.status, ["proposed", "selected"])));
+    await tx.update(brandSessions).set({ status: "in_progress", selectedDirectionId: null }).where(eq(brandSessions.id, sessionId));
+    await tx.update(brands).set({ status: "in_progress" }).where(eq(brands.id, session.brandId));
+  });
   return true;
 }
 

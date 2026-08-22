@@ -14,8 +14,11 @@ const db = vi.hoisted(() => ({
   rejectLatestDirectionRound: vi.fn(),
   restoreSessionAfterGenerationFailure: vi.fn(),
   saveSessionAnswer: vi.fn(),
+  saveRefinementNote: vi.fn(),
   selectDirection: vi.fn(),
   setSessionGenerating: vi.fn(),
+  setSiteApproval: vi.fn(),
+  reopenSelectedBrandSession: vi.fn(),
 }));
 
 const generation = vi.hoisted(() => ({
@@ -95,5 +98,13 @@ describe("procedimentos de marca", () => {
 
     await expect(caller.brand.choose({ sessionId: 72, directionId: 93 })).resolves.toEqual({ success: true });
     expect(db.selectDirection).toHaveBeenCalledWith(12, 72, 93);
+  });
+
+  it("persiste a aprovação da sugestão de site na sessão correta", async () => {
+    db.setSiteApproval.mockResolvedValue(true);
+    const caller = appRouter.createCaller(createContext());
+
+    await expect(caller.brand.approveSite({ sessionId: 72 })).resolves.toEqual({ success: true });
+    expect(db.setSiteApproval).toHaveBeenCalledWith(12, 72);
   });
 });

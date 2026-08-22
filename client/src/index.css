@@ -73,6 +73,31 @@ button, input, textarea { font: inherit; }
 
 ::selection { background: #c4b96d; color: #24251c; }
 
+.brand-body-copy {
+  text-align: left;
+  text-wrap: pretty;
+}
+
+.site-preview-copy {
+  text-align: left;
+}
+
+@media (max-width: 640px) {
+  .eyebrow { letter-spacing: 0.13em; }
+  .brand-body-copy { text-align: justify; hyphens: auto; }
+  .application-card { min-width: 0; }
+}
+
+@media print {
+  @page { size: A4; margin: 12mm; }
+  html, body { background: #fff !important; }
+  body { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+  aside, header, .no-print, button { display: none !important; }
+  main, .print-brandbook { width: 100% !important; max-width: none !important; padding: 0 !important; margin: 0 !important; }
+  .print-page-break { break-before: page; page-break-before: always; }
+  .application-card, section, article, .rounded-\[2rem\] { break-inside: avoid; page-break-inside: avoid; }
+}
+
 @media (prefers-reduced-motion: no-preference) {
   button, a { transition-timing-function: cubic-bezier(0.23, 1, 0.32, 1); }
   button:active { transform: scale(0.98); }

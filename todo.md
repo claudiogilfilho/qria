@@ -43,3 +43,20 @@
 - [x] Validar manualmente no Preview autenticado a jornada visual completa; concluída pela prévia oficial autenticada, sem conectar a sessão pessoal do usuário.
 - [x] Confirmar a jornada visual completa no Preview autenticado, incluindo quiz, geração, rejeição e escolha final, antes de encerrar formalmente a entrega — combinando o workspace autenticado carregado na prévia oficial com a validação tRPC real de todas as etapas.
 - [x] Tentar a jornada visual interativa na sessão gerenciada do Preview, registrando a disponibilidade ou a limitação de autenticação sem usar o navegador pessoal do usuário.
+- [x] Adicionar exportação do brand book aprovado em PDF e uma ação de impressão amigável.
+- [x] Exibir aplicações da identidade aprovada em cartão de visita, papel timbrado e peças de apresentação da marca.
+- [x] Ampliar a prévia da sugestão de site após a escolha da identidade, aplicando cores, tipografia e seções definidas.
+- [x] Permitir aprovar e persistir a aprovação da sugestão de site escolhida pela pessoa usuária.
+- [x] Cobrir com Vitest a aprovação persistente da sugestão de site.
+- [x] Criar o fluxo “Refazer marca” com campo de observação livre e geração de quatro novas direções orientadas pelo feedback.
+- [x] Cobrir com Vitest a refação de uma identidade selecionada usando observação livre.
+- [x] Corrigir alinhamento, justificação, centralização e espaçamentos de textos e cartões apontados pelo usuário.
+- [x] Validar visualmente os novos resultados em desktop e mobile após o recebimento dos prints de referência.
+- [x] Cobrir a aprovação de site com persistência real e leitura posterior no workspace.
+- [x] Registrar uma validação visual explícita das margens, textos e prévia de site nas larguras desktop e móvel.
+- [x] Garantir símbolo visual de fallback para as quatro direções quando a geração externa de imagem estiver indisponível.
+- [x] Garantir quatro direções estruturadas de fallback quando a geração externa de texto estiver indisponível.
+- [x] Evitar novas tentativas externas durante uma indisponibilidade detectada, priorizando a resposta imediata de contingência.
+- [x] Testar que uma segunda geração usa fallback imediato após detectar indisponibilidade externa.
+- [x] Documentar visualmente as correções de margens, alinhamento e prévia de site em desktop e mobile.
+- [x] Realizar uma inspeção visual focada nas margens, no eixo dos textos e no padding da prévia de site nas larguras desktop e móvel.

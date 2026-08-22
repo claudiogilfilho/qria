@@ -1,4 +1,4 @@
-import { index, int, json, mysqlEnum, mysqlTable, text, timestamp, varchar } from "drizzle-orm/mysql-core";
+import { boolean, index, int, json, mysqlEnum, mysqlTable, text, timestamp, varchar } from "drizzle-orm/mysql-core";
 
 /**
  * Core user table backing auth flow.
@@ -44,6 +44,8 @@ export const brandSessions = mysqlTable("brandSessions", {
   status: mysqlEnum("status", ["draft", "in_progress", "generating", "selected"]).default("draft").notNull(),
   currentRound: int("currentRound").default(0).notNull(),
   selectedDirectionId: int("selectedDirectionId"),
+  refinementNote: text("refinementNote"),
+  siteApproved: boolean("siteApproved").default(false).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 }, table => [index("brand_sessions_owner_idx").on(table.ownerId), index("brand_sessions_brand_idx").on(table.brandId)]);

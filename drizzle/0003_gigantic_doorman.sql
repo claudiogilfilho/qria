@@ -1,0 +1,1 @@
+ALTER TABLE `brandSessions` ADD `siteApproved` boolean DEFAULT false NOT NULL;

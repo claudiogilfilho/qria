@@ -50,6 +50,11 @@ async function run() {
   const workspace = await caller.brand.getWorkspace({ brandId: started.brandId });
   assert(workspace.session?.status === "selected" && workspace.selectedDirection?.id === current[0].id, "Escolha final não persistida.");
   console.log("[router-e2e] escolha final e workspace aprovados");
+
+  await caller.brand.approveSite({ sessionId: started.sessionId });
+  const approvedWorkspace = await caller.brand.getWorkspace({ brandId: started.brandId });
+  assert(approvedWorkspace.session?.siteApproved === true, "A aprovação do site não foi persistida.");
+  console.log("[router-e2e] aprovação de site persistida e retornada no workspace");
 }
 
 async function cleanup() {

@@ -1,0 +1,1 @@
+ALTER TABLE `brandSessions` ADD `refinementNote` text;

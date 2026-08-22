@@ -17,10 +17,13 @@ import {
   getSessionByBrand,
   listBrandsByOwner,
   rejectLatestDirectionRound,
+  reopenSelectedBrandSession,
   restoreSessionAfterGenerationFailure,
   saveSessionAnswer,
+  saveRefinementNote,
   selectDirection,
   setSessionGenerating,
+  setSiteApproval,
 } from "./db";
 
 const brandInput = z.object({
@@ -29,7 +32,7 @@ const brandInput = z.object({
   differentials: z.string().trim().min(8).max(2000),
 });
 
-async function generateRound(ownerId: number, sessionId: number, rejectCurrentRound = false) {
+async function generateRound(ownerId: number, sessionId: number, rejectCurrentRound = false, refinementNote?: string) {
   const session = await getOwnedSession(ownerId, sessionId);
   if (!session) throw new TRPCError({ code: "NOT_FOUND", message: "Sessão não encontrada." });
   const brand = await getOwnedBrand(ownerId, session.brandId);
@@ -39,8 +42,15 @@ async function generateRound(ownerId: number, sessionId: number, rejectCurrentRo
   }
 
   const existingDirections = await getDirectionsForSession(sessionId);
+  const requestedNote = refinementNote?.trim() || session.refinementNote || undefined;
+  if (refinementNote?.trim()) {
+    const saved = await saveRefinementNote(ownerId, sessionId, refinementNote.trim());
+    if (!saved) throw new TRPCError({ code: "NOT_FOUND", message: "Sessão não encontrada." });
+  }
   if (rejectCurrentRound) {
-    const rejected = await rejectLatestDirectionRound(ownerId, sessionId);
+    const rejected = session.status === "selected"
+      ? await reopenSelectedBrandSession(ownerId, sessionId)
+      : await rejectLatestDirectionRound(ownerId, sessionId);
     if (!rejected) throw new TRPCError({ code: "NOT_FOUND", message: "Sessão não encontrada." });
   }
   const nextRound = await getLatestRound(sessionId) + 1;
@@ -51,6 +61,7 @@ async function generateRound(ownerId: number, sessionId: number, rejectCurrentRo
       brand: { name: brand.name, description: brand.description, differentials: brand.differentials },
       answers: session.answers ?? {},
       priorDirectionTitles: existingDirections.map(direction => direction.title),
+      refinementNote: requestedNote,
     });
     const logoImageUrls = await generateLogoConcepts(directions);
     await createDirectionRound(sessionId, nextRound, directions.map((direction, index) => ({
@@ -103,13 +114,18 @@ export const appRouter = router({
       return updated;
     }),
     generate: protectedProcedure.input(z.object({ sessionId: z.number().int().positive() })).mutation(({ ctx, input }) => generateRound(ctx.user.id, input.sessionId)),
-    regenerate: protectedProcedure.input(z.object({ sessionId: z.number().int().positive() })).mutation(({ ctx, input }) => generateRound(ctx.user.id, input.sessionId, true)),
+    regenerate: protectedProcedure.input(z.object({ sessionId: z.number().int().positive(), refinementNote: z.string().trim().max(2000).optional() })).mutation(({ ctx, input }) => generateRound(ctx.user.id, input.sessionId, true, input.refinementNote)),
     choose: protectedProcedure.input(z.object({
       sessionId: z.number().int().positive(),
       directionId: z.number().int().positive(),
     })).mutation(async ({ ctx, input }) => {
       const selected = await selectDirection(ctx.user.id, input.sessionId, input.directionId);
       if (!selected) throw new TRPCError({ code: "NOT_FOUND", message: "Direção não encontrada." });
+      return { success: true } as const;
+    }),
+    approveSite: protectedProcedure.input(z.object({ sessionId: z.number().int().positive() })).mutation(async ({ ctx, input }) => {
+      const approved = await setSiteApproval(ctx.user.id, input.sessionId);
+      if (!approved) throw new TRPCError({ code: "NOT_FOUND", message: "Sessão não encontrada." });
       return { success: true } as const;
     }),
   }),
