@@ -60,5 +60,5 @@
 - [x] Testar que uma segunda geração usa fallback imediato após detectar indisponibilidade externa.
 - [x] Documentar visualmente as correções de margens, alinhamento e prévia de site em desktop e mobile.
 - [x] Realizar uma inspeção visual focada nas margens, no eixo dos textos e no padding da prévia de site nas larguras desktop e móvel.
-- [ ] Criar ou atualizar o repositório público do QRIA no GitHub com a versão estabilizada do projeto.
-- [ ] Confirmar o acesso público e entregar o link do repositório ao usuário.
+- [x] Criar ou atualizar o repositório público do QRIA no GitHub com a versão estabilizada do projeto.
+- [x] Confirmar o acesso público e entregar o link do repositório ao usuário.
