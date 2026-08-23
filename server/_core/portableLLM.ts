@@ -26,9 +26,10 @@ function providerConfig() {
 
 function normalizeMessage(message: InvokeParams["messages"][number]) {
   if (typeof message.content === "string") return message;
+  const parts = Array.isArray(message.content) ? message.content : [message.content];
   return {
     ...message,
-    content: message.content.map(part => typeof part === "string" ? { type: "text", text: part } : part),
+    content: parts.map(part => typeof part === "string" ? { type: "text", text: part } : part),
   };
 }
 
@@ -79,7 +80,6 @@ export async function listPortableLLMModels(): Promise<ModelsResponse> {
     if (!response.ok) throw new Error(String(response.status));
     return await response.json() as ModelsResponse;
   } catch {
-    // Some compatible providers do not expose /models. A configured model is enough.
     return { object: "list", data: [{ id: model, object: "model", created: 0, owned_by: ENV.aiProvider }] };
   }
 }
