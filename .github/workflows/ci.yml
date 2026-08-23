@@ -40,17 +40,23 @@ jobs:
         id: typecheck
         if: always() && steps.install.outcome == 'success'
         continue-on-error: true
-        run: pnpm check
+        run: |
+          mkdir -p .ci
+          pnpm check > .ci/typecheck.log 2>&1
       - name: Tests
         id: tests
         if: always() && steps.install.outcome == 'success'
         continue-on-error: true
-        run: pnpm test
+        run: |
+          mkdir -p .ci
+          pnpm test > .ci/tests.log 2>&1
       - name: Build
         id: build
         if: always() && steps.install.outcome == 'success'
         continue-on-error: true
-        run: pnpm build
+        run: |
+          mkdir -p .ci
+          pnpm build > .ci/build.log 2>&1
       - name: Record validation result
         if: always()
         env:
@@ -66,7 +72,7 @@ jobs:
           printf '{\n  "validated_sha": "%s",\n  "checkout": "%s",\n  "setup_node": "%s",\n  "setup_pnpm": "%s",\n  "install": "%s",\n  "typecheck": "%s",\n  "tests": "%s",\n  "build": "%s"\n}\n' "$GITHUB_SHA" "$CHECKOUT" "$SETUP_NODE" "$SETUP_PNPM" "$INSTALL" "$TYPECHECK" "$TESTS" "$BUILD" > .ci/qria-validation.json
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add .ci/qria-validation.json
+          git add .ci/qria-validation.json .ci/*.log
           git commit -m "ci: record QRIA validation result" || true
           git push
       - name: Fail when validation failed
