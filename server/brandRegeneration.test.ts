@@ -7,6 +7,7 @@ const db = vi.hoisted(() => ({
   getDirection: vi.fn(),
   getDirectionsForSession: vi.fn(),
   getFavoriteDirections: vi.fn(),
+  getIntegrationContext: vi.fn(() => ({ source: "qria", externalBrandRef: null })),
   getLatestRound: vi.fn(),
   rejectLatestDirectionRound: vi.fn(),
   setSessionGenerating: vi.fn(),
@@ -55,6 +56,7 @@ function createContext(): TrpcContext {
 describe("brand.regenerate", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    db.getIntegrationContext.mockReturnValue({ source: "qria", externalBrandRef: null });
     db.getOwnedSession.mockResolvedValue({
       id: 21,
       brandId: 8,
