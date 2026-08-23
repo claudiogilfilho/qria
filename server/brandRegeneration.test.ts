@@ -4,7 +4,10 @@ import type { TrpcContext } from "./_core/context";
 const db = vi.hoisted(() => ({
   getOwnedSession: vi.fn(),
   getOwnedBrand: vi.fn(),
+  getDirection: vi.fn(),
   getDirectionsForSession: vi.fn(),
+  getFavoriteDirections: vi.fn(),
+  getIntegrationContext: vi.fn(() => ({ source: "qria", externalBrandRef: null })),
   getLatestRound: vi.fn(),
   rejectLatestDirectionRound: vi.fn(),
   setSessionGenerating: vi.fn(),
@@ -18,6 +21,7 @@ const db = vi.hoisted(() => ({
   saveSessionAnswer: vi.fn(),
   saveRefinementNote: vi.fn(),
   selectDirection: vi.fn(),
+  setDirectionFavorite: vi.fn(),
   setSiteApproval: vi.fn(),
 }));
 
@@ -52,6 +56,7 @@ function createContext(): TrpcContext {
 describe("brand.regenerate", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    db.getIntegrationContext.mockReturnValue({ source: "qria", externalBrandRef: null });
     db.getOwnedSession.mockResolvedValue({
       id: 21,
       brandId: 8,

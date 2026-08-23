@@ -29,14 +29,14 @@ describe("diagnóstico de marca", () => {
     expect(fallback).toMatch(/^data:image\/svg\+xml/);
   });
 
-  it("mantém quatro direções estratégicas utilizáveis quando a geração externa não responde", () => {
+  it("mantém cinco direções estratégicas utilizáveis quando a geração externa não responde", () => {
     const directions = createFallbackDirections({
       brand: { name: "AGENSsIA", description: "IA que orienta decisões de mídia e crescimento.", differentials: "Leitura de dados, criatividade e otimização contínua." },
       answers: { personalidade: "A" },
       priorDirectionTitles: [],
       refinementNote: "Quero uma proposta mais humana e menos fria.",
     });
-    expect(directions).toHaveLength(4);
+    expect(directions).toHaveLength(5);
     expect(directions.every(direction => direction.palette.length === 4 && direction.site.sections.length >= 4)).toBe(true);
     expect(directions[0]?.essence).toContain("mais humana");
   });

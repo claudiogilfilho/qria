@@ -1,0 +1,119 @@
+name: QRIA CI
+
+on:
+  push:
+    branches:
+      - feat/exploracao-favoritos-agenssia
+
+permissions:
+  contents: write
+
+jobs:
+  validate:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        id: checkout
+        continue-on-error: true
+        uses: actions/checkout@v4
+      - name: Setup Node
+        id: setup_node
+        continue-on-error: true
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Setup pnpm with Corepack
+        id: setup_pnpm
+        if: always() && steps.setup_node.outcome == 'success'
+        continue-on-error: true
+        run: |
+          corepack enable
+          corepack prepare pnpm@10.4.1 --activate
+          pnpm --version
+      - name: Install dependencies
+        id: install
+        if: always() && steps.checkout.outcome == 'success' && steps.setup_pnpm.outcome == 'success' && steps.setup_node.outcome == 'success'
+        continue-on-error: true
+        run: pnpm install --frozen-lockfile
+      - name: Typecheck
+        id: typecheck
+        if: always() && steps.install.outcome == 'success'
+        continue-on-error: true
+        run: |
+          mkdir -p .ci
+          pnpm check > .ci/typecheck.log 2>&1
+      - name: Tests
+        id: tests
+        if: always() && steps.install.outcome == 'success'
+        continue-on-error: true
+        run: |
+          mkdir -p .ci
+          pnpm test > .ci/tests.log 2>&1
+      - name: Build
+        id: build
+        if: always() && steps.install.outcome == 'success'
+        continue-on-error: true
+        run: |
+          mkdir -p .ci
+          pnpm build > .ci/build.log 2>&1
+      - name: Package portable preview
+        id: package_preview
+        if: always() && steps.build.outcome == 'success'
+        continue-on-error: true
+        run: |
+          rm -rf .deploy
+          mkdir -p .deploy/api
+          cp -R dist/public/. .deploy/
+          pnpm exec esbuild 'api/[...path].ts' --platform=node --packages=external --bundle --format=esm --outfile='.deploy/api/[...path].js'
+          cp package.json .deploy/package.json
+          cp pnpm-lock.yaml .deploy/pnpm-lock.yaml
+          cat > .deploy/vercel.json <<'EOF'
+          {
+            "$schema": "https://openapi.vercel.sh/vercel.json",
+            "installCommand": "pnpm install --frozen-lockfile",
+            "rewrites": [
+              { "source": "/api/(.*)", "destination": "/api/$1" },
+              { "source": "/((?!api/).*)", "destination": "/index.html" }
+            ]
+          }
+          EOF
+      - name: Record validation result
+        if: always()
+        env:
+          CHECKOUT: ${{ steps.checkout.outcome }}
+          SETUP_NODE: ${{ steps.setup_node.outcome }}
+          SETUP_PNPM: ${{ steps.setup_pnpm.outcome }}
+          INSTALL: ${{ steps.install.outcome }}
+          TYPECHECK: ${{ steps.typecheck.outcome }}
+          TESTS: ${{ steps.tests.outcome }}
+          BUILD: ${{ steps.build.outcome }}
+          PACKAGE_PREVIEW: ${{ steps.package_preview.outcome }}
+        run: |
+          mkdir -p .ci
+          printf '{\n  "validated_sha": "%s",\n  "checkout": "%s",\n  "setup_node": "%s",\n  "setup_pnpm": "%s",\n  "install": "%s",\n  "typecheck": "%s",\n  "tests": "%s",\n  "build": "%s",\n  "package_preview": "%s"\n}\n' "$GITHUB_SHA" "$CHECKOUT" "$SETUP_NODE" "$SETUP_PNPM" "$INSTALL" "$TYPECHECK" "$TESTS" "$BUILD" "$PACKAGE_PREVIEW" > .ci/qria-validation.json
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f .ci/qria-validation.json .ci/*.log .deploy
+          git commit -m "ci: record QRIA validation and portable preview" || true
+          git push
+      - name: Fail when validation failed
+        if: always()
+        env:
+          CHECKOUT: ${{ steps.checkout.outcome }}
+          SETUP_NODE: ${{ steps.setup_node.outcome }}
+          SETUP_PNPM: ${{ steps.setup_pnpm.outcome }}
+          INSTALL: ${{ steps.install.outcome }}
+          TYPECHECK: ${{ steps.typecheck.outcome }}
+          TESTS: ${{ steps.tests.outcome }}
+          BUILD: ${{ steps.build.outcome }}
+          PACKAGE_PREVIEW: ${{ steps.package_preview.outcome }}
+        run: |
+          test "$CHECKOUT" = "success"
+          test "$SETUP_NODE" = "success"
+          test "$SETUP_PNPM" = "success"
+          test "$INSTALL" = "success"
+          test "$TYPECHECK" = "success"
+          test "$TESTS" = "success"
+          test "$BUILD" = "success"
+          test "$PACKAGE_PREVIEW" = "success"
