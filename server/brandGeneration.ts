@@ -1,5 +1,5 @@
-import { generateImage } from "./_core/imageGeneration";
-import { invokeLLM, listLLMModels } from "./_core/llm";
+import { generatePortableImage as generateImage } from "./_core/portableImageGeneration";
+import { invokePortableLLM as invokeLLM, listPortableLLMModels as listLLMModels } from "./_core/portableLLM";
 import { getAnswerNarrative } from "../shared/brandQuiz";
 
 let externalGenerationUnavailable = false;
@@ -32,7 +32,7 @@ const directionItem = {
 } as const;
 const directionSchema = { type: "object", properties: { directions: { type: "array", minItems: 5, maxItems: 5, items: directionItem } }, required: ["directions"], additionalProperties: false } as const;
 
-function selectModel(models: Array<{ id: string }>) { return models.find(model => model.id === "gpt-5")?.id ?? models.find(model => model.id === "claude-sonnet-4-6")?.id ?? models.find(model => model.id === "gpt-5-mini")?.id ?? models[0]?.id; }
+function selectModel(models: Array<{ id: string }>) { return models.find(model => model.id === "gpt-5.6-terra")?.id ?? models.find(model => model.id === "gpt-5.6-sol")?.id ?? models.find(model => model.id === "gpt-5")?.id ?? models.find(model => model.id === "claude-sonnet-4-6")?.id ?? models[0]?.id; }
 
 export function createFallbackDirections(input: GenerationInput): BrandDirection[] {
   const round = Math.floor(input.priorDirectionTitles.length / 5) + 1;
