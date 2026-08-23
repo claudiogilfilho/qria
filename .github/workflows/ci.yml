@@ -25,38 +25,48 @@ jobs:
           node-version: 20
           cache: pnpm
       - name: Install dependencies
+        id: install
+        continue-on-error: true
         run: pnpm install --frozen-lockfile
       - name: Typecheck
         id: typecheck
+        if: steps.install.outcome == 'success'
         continue-on-error: true
         run: pnpm check
       - name: Tests
         id: tests
+        if: steps.install.outcome == 'success'
         continue-on-error: true
         run: pnpm test
       - name: Build
         id: build
+        if: steps.install.outcome == 'success'
         continue-on-error: true
         run: pnpm build
       - name: Record validation result
+        if: always()
         env:
+          INSTALL: ${{ steps.install.outcome }}
           TYPECHECK: ${{ steps.typecheck.outcome }}
           TESTS: ${{ steps.tests.outcome }}
           BUILD: ${{ steps.build.outcome }}
         run: |
           mkdir -p .ci
-          printf '{\n  "validated_sha": "%s",\n  "typecheck": "%s",\n  "tests": "%s",\n  "build": "%s"\n}\n' "$GITHUB_SHA" "$TYPECHECK" "$TESTS" "$BUILD" > .ci/qria-validation.json
+          printf '{\n  "validated_sha": "%s",\n  "install": "%s",\n  "typecheck": "%s",\n  "tests": "%s",\n  "build": "%s"\n}\n' "$GITHUB_SHA" "$INSTALL" "$TYPECHECK" "$TESTS" "$BUILD" > .ci/qria-validation.json
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add .ci/qria-validation.json
           git commit -m "ci: record QRIA validation result" || true
           git push
       - name: Fail when validation failed
+        if: always()
         env:
+          INSTALL: ${{ steps.install.outcome }}
           TYPECHECK: ${{ steps.typecheck.outcome }}
           TESTS: ${{ steps.tests.outcome }}
           BUILD: ${{ steps.build.outcome }}
         run: |
+          test "$INSTALL" = "success"
           test "$TYPECHECK" = "success"
           test "$TESTS" = "success"
           test "$BUILD" = "success"
