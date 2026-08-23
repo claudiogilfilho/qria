@@ -8,7 +8,7 @@ import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import { generateBrandDirections, generateLogoConcepts } from "./brandGeneration";
 import {
   createBrandWithSession, createDirectionRound, getDirection, getDirectionsForSession, getFavoriteDirections,
-  getLatestRound, getOwnedBrand, getOwnedSession, getSelectedDirection, getSessionByBrand, listBrandsByOwner,
+  getIntegrationContext, getLatestRound, getOwnedBrand, getOwnedSession, getSelectedDirection, getSessionByBrand, listBrandsByOwner,
   rejectLatestDirectionRound, reopenSelectedBrandSession, restoreSessionAfterGenerationFailure, saveSessionAnswer,
   saveRefinementNote, selectDirection, setDirectionFavorite, setSessionGenerating, setSiteApproval,
 } from "./db";
@@ -21,12 +21,16 @@ const brandInput = z.object({
   externalBrandRef: z.string().trim().max(191).optional(),
 });
 
+function completedQuizAnswers(answers: Record<string, string> | null | undefined) {
+  return BRAND_QUIZ.filter(question => Boolean(answers?.[question.id])).length;
+}
+
 async function generateRound(ownerId: number, sessionId: number, options: { rejectCurrentRound?: boolean; refinementNote?: string; parentDirectionId?: number } = {}) {
   const session = await getOwnedSession(ownerId, sessionId);
   if (!session) throw new TRPCError({ code: "NOT_FOUND", message: "Sessão não encontrada." });
   const brand = await getOwnedBrand(ownerId, session.brandId);
   if (!brand) throw new TRPCError({ code: "NOT_FOUND", message: "Marca não encontrada." });
-  if (Object.keys(session.answers ?? {}).length < BRAND_QUIZ_TOTAL) throw new TRPCError({ code: "BAD_REQUEST", message: "Responda todas as perguntas antes de gerar as direções." });
+  if (completedQuizAnswers(session.answers) < BRAND_QUIZ_TOTAL) throw new TRPCError({ code: "BAD_REQUEST", message: "Responda todas as perguntas antes de gerar as direções." });
 
   const existingDirections = await getDirectionsForSession(sessionId);
   const parent = options.parentDirectionId ? await getDirection(ownerId, sessionId, options.parentDirectionId) : undefined;
@@ -73,7 +77,8 @@ export const appRouter = router({
       const directions = session ? await getDirectionsForSession(session.id) : [];
       const favorites = session ? await getFavoriteDirections(ctx.user.id, session.id) : [];
       const selectedDirection = await getSelectedDirection(ctx.user.id, input.brandId);
-      return { brand, session, directions, favorites, selectedDirection };
+      const integration = getIntegrationContext(session);
+      return { brand, session, directions, favorites, selectedDirection, integration };
     }),
     answer: protectedProcedure.input(z.object({ sessionId: z.number().int().positive(), questionId: z.string(), option: z.enum(["A", "B", "C", "D", "E"]) })).mutation(async ({ ctx, input }) => {
       if (!BRAND_QUIZ.some(question => question.id === input.questionId)) throw new TRPCError({ code: "BAD_REQUEST", message: "Pergunta de quiz inválida." });
