@@ -26,17 +26,10 @@ export const brands = mysqlTable("brands", {
   name: varchar("name", { length: 160 }).notNull(),
   description: text("description").notNull(),
   differentials: text("differentials").notNull(),
-  /** Origem da jornada: qria, agenssia ou futura integração. */
-  source: varchar("source", { length: 64 }).default("qria").notNull(),
-  /** Identificador da marca no sistema de origem, quando houver. */
-  externalBrandRef: varchar("externalBrandRef", { length: 191 }),
   status: mysqlEnum("status", ["draft", "in_progress", "selected"]).default("draft").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-}, table => [
-  index("brands_owner_idx").on(table.ownerId),
-  index("brands_source_external_idx").on(table.source, table.externalBrandRef),
-]);
+}, table => [index("brands_owner_idx").on(table.ownerId)]);
 
 export const brandSessions = mysqlTable("brandSessions", {
   id: int("id").autoincrement().primaryKey(),
@@ -61,18 +54,8 @@ export const brandDirections = mysqlTable("brandDirections", {
   content: json("content").$type<Record<string, unknown>>().notNull(),
   logoImageUrl: text("logoImageUrl"),
   status: mysqlEnum("status", ["proposed", "rejected", "selected"]).default("proposed").notNull(),
-  /** Favoritar não encerra a exploração: apenas guarda a direção para a final. */
-  isFavorite: boolean("isFavorite").default(false).notNull(),
-  /** Direção que originou esta variação. Nulo nas direções-raiz. */
-  parentDirectionId: int("parentDirectionId"),
-  /** Profundidade da árvore criativa: 0 raiz, 1 filha, 2 neta... */
-  explorationDepth: int("explorationDepth").default(0).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
-}, table => [
-  index("brand_directions_session_round_idx").on(table.sessionId, table.round),
-  index("brand_directions_parent_idx").on(table.parentDirectionId),
-  index("brand_directions_favorite_idx").on(table.sessionId, table.isFavorite),
-]);
+}, table => [index("brand_directions_session_round_idx").on(table.sessionId, table.round)]);
 
 export type Brand = typeof brands.$inferSelect;
 export type BrandSession = typeof brandSessions.$inferSelect;
