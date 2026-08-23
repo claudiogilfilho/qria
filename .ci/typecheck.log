@@ -1,0 +1,10 @@
+
+> marcaquiz-mvp@1.0.0 check /home/runner/work/qria/qria
+> tsc --noEmit
+
+client/src/pages/BrandWorkspace.tsx(56,271): error TS17008: JSX element 'section' has no corresponding closing tag.
+client/src/pages/BrandWorkspace.tsx(56,848): error TS17008: JSX element 'div' has no corresponding closing tag.
+client/src/pages/BrandWorkspace.tsx(56,914): error TS17008: JSX element 'div' has no corresponding closing tag.
+client/src/pages/BrandWorkspace.tsx(56,1034): error TS1005: '</' expected.
+client/src/pages/BrandWorkspace.tsx(56,1034): error TS1109: Expression expected.
+ ELIFECYCLE  Command failed with exit code 2.
