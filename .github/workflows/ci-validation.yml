@@ -5,26 +5,75 @@ on:
     branches:
       - ci/qria-validation-base
 
+permissions:
+  contents: write
+
 jobs:
   validate:
+    if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout head branch
         uses: actions/checkout@v4
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
         with:
-          version: 10.4.1
+          ref: ${{ github.head_ref }}
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: pnpm
+      - name: Setup pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@10.4.1 --activate
       - name: Install dependencies
+        id: install
+        continue-on-error: true
         run: pnpm install --frozen-lockfile
       - name: Typecheck
-        run: pnpm check
+        id: typecheck
+        if: always() && steps.install.outcome == 'success'
+        continue-on-error: true
+        run: |
+          mkdir -p .ci
+          pnpm check > .ci/typecheck.log 2>&1
       - name: Tests
-        run: pnpm test
+        id: tests
+        if: always() && steps.install.outcome == 'success'
+        continue-on-error: true
+        run: |
+          mkdir -p .ci
+          pnpm test > .ci/tests.log 2>&1
       - name: Build
-        run: pnpm build
+        id: build
+        if: always() && steps.install.outcome == 'success'
+        continue-on-error: true
+        run: |
+          mkdir -p .ci
+          pnpm build > .ci/build.log 2>&1
+      - name: Record result on head branch
+        if: always()
+        env:
+          INSTALL: ${{ steps.install.outcome }}
+          TYPECHECK: ${{ steps.typecheck.outcome }}
+          TESTS: ${{ steps.tests.outcome }}
+          BUILD: ${{ steps.build.outcome }}
+        run: |
+          mkdir -p .ci
+          printf '{\n  "validated_sha": "%s",\n  "install": "%s",\n  "typecheck": "%s",\n  "tests": "%s",\n  "build": "%s"\n}\n' "$GITHUB_SHA" "$INSTALL" "$TYPECHECK" "$TESTS" "$BUILD" > .ci/qria-pr-validation.json
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .ci/qria-pr-validation.json .ci/*.log
+          git commit -m "ci: record PR validation result" || true
+          git push origin HEAD:${{ github.head_ref }}
+      - name: Enforce green validation
+        if: always()
+        env:
+          INSTALL: ${{ steps.install.outcome }}
+          TYPECHECK: ${{ steps.typecheck.outcome }}
+          TESTS: ${{ steps.tests.outcome }}
+          BUILD: ${{ steps.build.outcome }}
+        run: |
+          test "$INSTALL" = "success"
+          test "$TYPECHECK" = "success"
+          test "$TESTS" = "success"
+          test "$BUILD" = "success"
