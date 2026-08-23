@@ -1,5 +1,8 @@
 {
-  "validated_sha": "53f4d3bad7f9026c2f2e5daaa5daea1923b8a001",
+  "validated_sha": "4c8b377eb879e66450ea04ed3d1ed1da9fc738c3",
+  "checkout": "success",
+  "setup_pnpm": "failure",
+  "setup_node": "failure",
   "install": "skipped",
   "typecheck": "skipped",
   "tests": "skipped",
