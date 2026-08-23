@@ -14,45 +14,55 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
+        id: checkout
+        continue-on-error: true
         uses: actions/checkout@v4
       - name: Setup pnpm
+        id: setup_pnpm
+        continue-on-error: true
         uses: pnpm/action-setup@v4
         with:
           version: 10.4.1
       - name: Setup Node
+        id: setup_node
+        continue-on-error: true
         uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: pnpm
       - name: Install dependencies
         id: install
+        if: always() && steps.checkout.outcome == 'success' && steps.setup_pnpm.outcome == 'success' && steps.setup_node.outcome == 'success'
         continue-on-error: true
         run: pnpm install --frozen-lockfile
       - name: Typecheck
         id: typecheck
-        if: steps.install.outcome == 'success'
+        if: always() && steps.install.outcome == 'success'
         continue-on-error: true
         run: pnpm check
       - name: Tests
         id: tests
-        if: steps.install.outcome == 'success'
+        if: always() && steps.install.outcome == 'success'
         continue-on-error: true
         run: pnpm test
       - name: Build
         id: build
-        if: steps.install.outcome == 'success'
+        if: always() && steps.install.outcome == 'success'
         continue-on-error: true
         run: pnpm build
       - name: Record validation result
         if: always()
         env:
+          CHECKOUT: ${{ steps.checkout.outcome }}
+          SETUP_PNPM: ${{ steps.setup_pnpm.outcome }}
+          SETUP_NODE: ${{ steps.setup_node.outcome }}
           INSTALL: ${{ steps.install.outcome }}
           TYPECHECK: ${{ steps.typecheck.outcome }}
           TESTS: ${{ steps.tests.outcome }}
           BUILD: ${{ steps.build.outcome }}
         run: |
           mkdir -p .ci
-          printf '{\n  "validated_sha": "%s",\n  "install": "%s",\n  "typecheck": "%s",\n  "tests": "%s",\n  "build": "%s"\n}\n' "$GITHUB_SHA" "$INSTALL" "$TYPECHECK" "$TESTS" "$BUILD" > .ci/qria-validation.json
+          printf '{\n  "validated_sha": "%s",\n  "checkout": "%s",\n  "setup_pnpm": "%s",\n  "setup_node": "%s",\n  "install": "%s",\n  "typecheck": "%s",\n  "tests": "%s",\n  "build": "%s"\n}\n' "$GITHUB_SHA" "$CHECKOUT" "$SETUP_PNPM" "$SETUP_NODE" "$INSTALL" "$TYPECHECK" "$TESTS" "$BUILD" > .ci/qria-validation.json
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add .ci/qria-validation.json
@@ -61,11 +71,17 @@ jobs:
       - name: Fail when validation failed
         if: always()
         env:
+          CHECKOUT: ${{ steps.checkout.outcome }}
+          SETUP_PNPM: ${{ steps.setup_pnpm.outcome }}
+          SETUP_NODE: ${{ steps.setup_node.outcome }}
           INSTALL: ${{ steps.install.outcome }}
           TYPECHECK: ${{ steps.typecheck.outcome }}
           TESTS: ${{ steps.tests.outcome }}
           BUILD: ${{ steps.build.outcome }}
         run: |
+          test "$CHECKOUT" = "success"
+          test "$SETUP_PNPM" = "success"
+          test "$SETUP_NODE" = "success"
           test "$INSTALL" = "success"
           test "$TYPECHECK" = "success"
           test "$TESTS" = "success"
