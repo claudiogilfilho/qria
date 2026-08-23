@@ -16,13 +16,16 @@ const state = vi.hoisted(() => ({
 const db = vi.hoisted(() => ({
   createBrandWithSession: vi.fn(async (ownerId: number, input: { name: string; description: string; differentials: string; source?: string; externalBrandRef?: string }) => {
     const brand: StoredBrand = { id: state.brands.length + 1, ownerId, ...input, status: "draft" };
-    const session: StoredSession = { id: state.sessions.length + 1, brandId: brand.id, ownerId, answers: {}, status: "draft", currentRound: 0, selectedDirectionId: null };
+    const answers: Record<string, string> = { __source: input.source ?? "qria" };
+    if (input.externalBrandRef) answers.__externalBrandRef = input.externalBrandRef;
+    const session: StoredSession = { id: state.sessions.length + 1, brandId: brand.id, ownerId, answers, status: "draft", currentRound: 0, selectedDirectionId: null };
     state.brands.push(brand); state.sessions.push(session); return { brandId: brand.id, sessionId: session.id };
   }),
   getOwnedBrand: vi.fn(async (ownerId: number, brandId: number) => state.brands.find(brand => brand.ownerId === ownerId && brand.id === brandId)),
   getOwnedSession: vi.fn(async (ownerId: number, sessionId: number) => state.sessions.find(session => session.ownerId === ownerId && session.id === sessionId)),
   getSessionByBrand: vi.fn(async (ownerId: number, brandId: number) => state.sessions.find(session => session.ownerId === ownerId && session.brandId === brandId)),
   listBrandsByOwner: vi.fn(async (ownerId: number) => state.brands.filter(brand => brand.ownerId === ownerId)),
+  getIntegrationContext: vi.fn((session: StoredSession | undefined) => ({ source: session?.answers.__source ?? "qria", externalBrandRef: session?.answers.__externalBrandRef ?? null })),
   saveSessionAnswer: vi.fn(async (ownerId: number, sessionId: number, questionId: string, option: string) => {
     const session = state.sessions.find(item => item.ownerId === ownerId && item.id === sessionId); if (!session) return undefined;
     session.answers[questionId] = option; session.status = "in_progress"; return session;
@@ -122,6 +125,7 @@ describe("fluxo integrado de identidade", () => {
 
     const beforeChoice = await caller.brand.getWorkspace({ brandId: started.brandId });
     expect(beforeChoice.favorites.map(direction => direction.id)).toContain(root.id);
+    expect(beforeChoice.integration).toEqual({ source: "qria", externalBrandRef: null });
 
     const child = children[0]!;
     await caller.brand.favorite({ sessionId: started.sessionId, directionId: child.id, favorite: true });
