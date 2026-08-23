@@ -1,0 +1,7 @@
+{
+  "validated_sha": "8bdc2ffe52de438cb53b0da16bd945e312193921",
+  "install": "success",
+  "typecheck": "success",
+  "tests": "failure",
+  "build": "success"
+}
