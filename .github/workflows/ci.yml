@@ -72,7 +72,7 @@ jobs:
           printf '{\n  "validated_sha": "%s",\n  "checkout": "%s",\n  "setup_node": "%s",\n  "setup_pnpm": "%s",\n  "install": "%s",\n  "typecheck": "%s",\n  "tests": "%s",\n  "build": "%s"\n}\n' "$GITHUB_SHA" "$CHECKOUT" "$SETUP_NODE" "$SETUP_PNPM" "$INSTALL" "$TYPECHECK" "$TESTS" "$BUILD" > .ci/qria-validation.json
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add .ci/qria-validation.json .ci/*.log
+          git add -f .ci/qria-validation.json .ci/*.log
           git commit -m "ci: record QRIA validation result" || true
           git push
       - name: Fail when validation failed
