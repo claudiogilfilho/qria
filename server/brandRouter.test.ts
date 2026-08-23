@@ -7,6 +7,7 @@ const db = vi.hoisted(() => ({
   getDirection: vi.fn(),
   getDirectionsForSession: vi.fn(),
   getFavoriteDirections: vi.fn(),
+  getIntegrationContext: vi.fn(() => ({ source: "qria", externalBrandRef: null })),
   getLatestRound: vi.fn(),
   getOwnedBrand: vi.fn(),
   getOwnedSession: vi.fn(),
@@ -56,6 +57,7 @@ describe("procedimentos de marca", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     db.getFavoriteDirections.mockResolvedValue([]);
+    db.getIntegrationContext.mockReturnValue({ source: "qria", externalBrandRef: null });
   });
 
   it("rejeita dados iniciais incompletos antes de criar uma sessão", async () => {
@@ -96,17 +98,19 @@ describe("procedimentos de marca", () => {
     expect(db.saveSessionAnswer).not.toHaveBeenCalled();
   });
 
-  it("monta o workspace com marca, sessão, direções, favoritas e escolha persistida", async () => {
+  it("monta o workspace com marca, sessão, direções, favoritas, integração e escolha persistida", async () => {
     const brand = { id: 41, ownerId: 12, name: "Noma Studio", description: "Descrição", differentials: "Diferenciais", status: "selected" };
-    const session = { id: 72, brandId: 41, ownerId: 12, answers: { personalidade: "A" }, status: "selected", currentRound: 1, selectedDirectionId: 93 };
+    const session = { id: 72, brandId: 41, ownerId: 12, answers: { personalidade: "A", __source: "agenssia", __externalBrandRef: "brand_123" }, status: "selected", currentRound: 1, selectedDirectionId: 93 };
     const directions = [{ id: 93, sessionId: 72, title: "Âmbar Editorial", round: 1, optionKey: "B", status: "selected", isFavorite: true }];
+    const integration = { source: "agenssia", externalBrandRef: "brand_123" };
     db.getOwnedBrand.mockResolvedValue(brand);
     db.getSessionByBrand.mockResolvedValue(session);
     db.getDirectionsForSession.mockResolvedValue(directions);
     db.getFavoriteDirections.mockResolvedValue(directions);
     db.getSelectedDirection.mockResolvedValue(directions[0]);
+    db.getIntegrationContext.mockReturnValue(integration);
     const caller = appRouter.createCaller(createContext());
-    await expect(caller.brand.getWorkspace({ brandId: 41 })).resolves.toEqual({ brand, session, directions, favorites: directions, selectedDirection: directions[0] });
+    await expect(caller.brand.getWorkspace({ brandId: 41 })).resolves.toEqual({ brand, session, directions, favorites: directions, selectedDirection: directions[0], integration });
   });
 
   it("favorita e desfavorita uma direção sem encerrar a sessão", async () => {
