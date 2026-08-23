@@ -5,6 +5,51 @@ import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
 
+const DIRECTION_META_KEY = "__qriaMeta";
+const SOURCE_KEY = "__source";
+const EXTERNAL_REF_KEY = "__externalBrandRef";
+
+type DirectionMeta = {
+  favorite?: boolean;
+  parentDirectionId?: number | null;
+  explorationDepth?: number;
+};
+
+export type ExplorableDirection = BrandDirectionRow & {
+  isFavorite: boolean;
+  parentDirectionId: number | null;
+  explorationDepth: number;
+};
+
+function readDirectionMeta(content: Record<string, unknown>): DirectionMeta {
+  const candidate = content[DIRECTION_META_KEY];
+  if (!candidate || typeof candidate !== "object" || Array.isArray(candidate)) return {};
+  return candidate as DirectionMeta;
+}
+
+function mergeDirectionMeta(content: Record<string, unknown>, patch: DirectionMeta): Record<string, unknown> {
+  const previous = readDirectionMeta(content);
+  return { ...content, [DIRECTION_META_KEY]: { ...previous, ...patch } };
+}
+
+function withDirectionMeta(direction: BrandDirectionRow): ExplorableDirection {
+  const meta = readDirectionMeta(direction.content ?? {});
+  return {
+    ...direction,
+    isFavorite: meta.favorite === true,
+    parentDirectionId: typeof meta.parentDirectionId === "number" ? meta.parentDirectionId : null,
+    explorationDepth: typeof meta.explorationDepth === "number" ? meta.explorationDepth : 0,
+  };
+}
+
+export function getIntegrationContext(session: { answers?: Record<string, string> | null } | undefined) {
+  const answers = session?.answers ?? {};
+  return {
+    source: answers[SOURCE_KEY] || "qria",
+    externalBrandRef: answers[EXTERNAL_REF_KEY] || null,
+  };
+}
+
 export async function getDb() {
   if (!_db && process.env.DATABASE_URL) {
     try { _db = drizzle(process.env.DATABASE_URL); }
@@ -58,9 +103,17 @@ async function requireDb() { const db = await getDb(); if (!db) throw new Error(
 export async function createBrandWithSession(ownerId: number, input: { name: string; description: string; differentials: string; source?: string; externalBrandRef?: string }) {
   const db = await requireDb();
   return db.transaction(async tx => {
-    const brandResult = await tx.insert(brands).values({ ...input, source: input.source ?? "qria", externalBrandRef: input.externalBrandRef ?? null, ownerId, status: "draft" });
+    const brandResult = await tx.insert(brands).values({
+      name: input.name,
+      description: input.description,
+      differentials: input.differentials,
+      ownerId,
+      status: "draft",
+    });
     const brandId = getInsertId(brandResult);
-    const sessionResult = await tx.insert(brandSessions).values({ brandId, ownerId, answers: {}, status: "draft", currentRound: 0 });
+    const answers: Record<string, string> = { [SOURCE_KEY]: input.source?.trim() || "qria" };
+    if (input.externalBrandRef?.trim()) answers[EXTERNAL_REF_KEY] = input.externalBrandRef.trim();
+    const sessionResult = await tx.insert(brandSessions).values({ brandId, ownerId, answers, status: "draft", currentRound: 0 });
     return { brandId, sessionId: getInsertId(sessionResult) };
   });
 }
@@ -79,24 +132,49 @@ export async function saveSessionAnswer(ownerId: number, sessionId: number, ques
 export async function saveRefinementNote(ownerId: number, sessionId: number, refinementNote: string) { const session = await getOwnedSession(ownerId, sessionId); if (!session) return false; const db = await requireDb(); await db.update(brandSessions).set({ refinementNote }).where(and(eq(brandSessions.id, sessionId), eq(brandSessions.ownerId, ownerId))); return true; }
 export async function setSiteApproval(ownerId: number, sessionId: number) { const session = await getOwnedSession(ownerId, sessionId); if (!session) return false; const db = await requireDb(); await db.update(brandSessions).set({ siteApproved: true }).where(and(eq(brandSessions.id, sessionId), eq(brandSessions.ownerId, ownerId))); return true; }
 
-export async function getDirectionsForSession(sessionId: number) { const db = await requireDb(); return db.select().from(brandDirections).where(eq(brandDirections.sessionId, sessionId)).orderBy(desc(brandDirections.round), brandDirections.optionKey); }
-export async function getDirection(ownerId: number, sessionId: number, directionId: number) { const session = await getOwnedSession(ownerId, sessionId); if (!session) return undefined; const db = await requireDb(); return (await db.select().from(brandDirections).where(and(eq(brandDirections.id, directionId), eq(brandDirections.sessionId, sessionId))).limit(1))[0]; }
-export async function getFavoriteDirections(ownerId: number, sessionId: number) { const session = await getOwnedSession(ownerId, sessionId); if (!session) return []; const db = await requireDb(); return db.select().from(brandDirections).where(and(eq(brandDirections.sessionId, sessionId), eq(brandDirections.isFavorite, true))).orderBy(desc(brandDirections.createdAt)); }
-export async function setDirectionFavorite(ownerId: number, sessionId: number, directionId: number, favorite: boolean) { const direction = await getDirection(ownerId, sessionId, directionId); if (!direction) return false; const db = await requireDb(); await db.update(brandDirections).set({ isFavorite: favorite }).where(eq(brandDirections.id, directionId)); return true; }
+export async function getDirectionsForSession(sessionId: number): Promise<ExplorableDirection[]> {
+  const db = await requireDb();
+  const rows = await db.select().from(brandDirections).where(eq(brandDirections.sessionId, sessionId)).orderBy(desc(brandDirections.round), brandDirections.optionKey);
+  return rows.map(withDirectionMeta);
+}
+
+export async function getDirection(ownerId: number, sessionId: number, directionId: number): Promise<ExplorableDirection | undefined> {
+  const session = await getOwnedSession(ownerId, sessionId); if (!session) return undefined;
+  const db = await requireDb();
+  const row = (await db.select().from(brandDirections).where(and(eq(brandDirections.id, directionId), eq(brandDirections.sessionId, sessionId))).limit(1))[0];
+  return row ? withDirectionMeta(row) : undefined;
+}
+
+export async function getFavoriteDirections(ownerId: number, sessionId: number) {
+  const session = await getOwnedSession(ownerId, sessionId); if (!session) return [];
+  const directions = await getDirectionsForSession(sessionId);
+  return directions.filter(direction => direction.isFavorite);
+}
+
+export async function setDirectionFavorite(ownerId: number, sessionId: number, directionId: number, favorite: boolean) {
+  const direction = await getDirection(ownerId, sessionId, directionId); if (!direction) return false;
+  const db = await requireDb();
+  await db.update(brandDirections).set({ content: mergeDirectionMeta(direction.content, { favorite }) }).where(eq(brandDirections.id, directionId));
+  return true;
+}
+
 export async function getLatestRound(sessionId: number) { const db = await requireDb(); const result = await db.select().from(brandDirections).where(eq(brandDirections.sessionId, sessionId)).orderBy(desc(brandDirections.round)).limit(1); return result[0]?.round ?? 0; }
 
 export async function rejectLatestDirectionRound(ownerId: number, sessionId: number) {
   const session = await getOwnedSession(ownerId, sessionId); if (!session) return false;
   const latestRound = await getLatestRound(sessionId); if (latestRound === 0) return true;
-  const db = await requireDb();
-  await db.update(brandDirections).set({ status: "rejected" }).where(and(eq(brandDirections.sessionId, sessionId), eq(brandDirections.round, latestRound), eq(brandDirections.status, "proposed"), eq(brandDirections.isFavorite, false)));
+  const directions = await getDirectionsForSession(sessionId);
+  const ids = directions.filter(direction => direction.round === latestRound && direction.status === "proposed" && !direction.isFavorite).map(direction => direction.id);
+  if (ids.length > 0) { const db = await requireDb(); await db.update(brandDirections).set({ status: "rejected" }).where(inArray(brandDirections.id, ids)); }
   return true;
 }
 
 export async function reopenSelectedBrandSession(ownerId: number, sessionId: number) {
   const session = await getOwnedSession(ownerId, sessionId); if (!session) return false; const db = await requireDb();
+  const directions = await getDirectionsForSession(sessionId);
+  const ids = directions.filter(direction => direction.round === session.currentRound && (direction.status === "proposed" || direction.status === "selected") && !direction.isFavorite).map(direction => direction.id);
   await db.transaction(async tx => {
-    await tx.update(brandDirections).set({ status: "rejected" }).where(and(eq(brandDirections.sessionId, sessionId), eq(brandDirections.round, session.currentRound), inArray(brandDirections.status, ["proposed", "selected"]), eq(brandDirections.isFavorite, false)));
+    if (ids.length > 0) await tx.update(brandDirections).set({ status: "rejected" }).where(inArray(brandDirections.id, ids));
     await tx.update(brandSessions).set({ status: "in_progress", selectedDirectionId: null }).where(eq(brandSessions.id, sessionId));
     await tx.update(brands).set({ status: "in_progress" }).where(eq(brands.id, session.brandId));
   }); return true;
@@ -107,13 +185,31 @@ export async function restoreSessionAfterGenerationFailure(ownerId: number, sess
 
 export async function createDirectionRound(sessionId: number, round: number, directions: Array<{ title: string; content: Record<string, unknown>; logoImageUrl: string | null }>, parentDirectionId?: number | null, explorationDepth = 0) {
   const db = await requireDb(); const optionKeys = ["A", "B", "C", "D", "E"];
-  await db.insert(brandDirections).values(directions.map((direction, index) => ({ sessionId, round, optionKey: optionKeys[index] ?? String(index + 1), title: direction.title, content: direction.content, logoImageUrl: direction.logoImageUrl, status: "proposed" as const, isFavorite: false, parentDirectionId: parentDirectionId ?? null, explorationDepth })));
+  await db.insert(brandDirections).values(directions.map((direction, index) => ({
+    sessionId,
+    round,
+    optionKey: optionKeys[index] ?? "E",
+    title: direction.title,
+    content: mergeDirectionMeta(direction.content, { favorite: false, parentDirectionId: parentDirectionId ?? null, explorationDepth }),
+    logoImageUrl: direction.logoImageUrl,
+    status: "proposed" as const,
+  })));
   await db.update(brandSessions).set({ status: "in_progress", currentRound: round }).where(eq(brandSessions.id, sessionId));
 }
 
 export async function selectDirection(ownerId: number, sessionId: number, directionId: number) {
   const db = await requireDb(); const session = await getOwnedSession(ownerId, sessionId); if (!session) return false;
   const direction = await getDirection(ownerId, sessionId, directionId); if (!direction) return false;
-  await db.transaction(async tx => { await tx.update(brandDirections).set({ status: "selected", isFavorite: true }).where(eq(brandDirections.id, directionId)); await tx.update(brandSessions).set({ status: "selected", selectedDirectionId: directionId }).where(eq(brandSessions.id, sessionId)); await tx.update(brands).set({ status: "selected" }).where(eq(brands.id, session.brandId)); }); return true;
+  await db.transaction(async tx => {
+    await tx.update(brandDirections).set({ status: "selected", content: mergeDirectionMeta(direction.content, { favorite: true }) }).where(eq(brandDirections.id, directionId));
+    await tx.update(brandSessions).set({ status: "selected", selectedDirectionId: directionId }).where(eq(brandSessions.id, sessionId));
+    await tx.update(brands).set({ status: "selected" }).where(eq(brands.id, session.brandId));
+  }); return true;
 }
-export async function getSelectedDirection(ownerId: number, brandId: number) { const session = await getSessionByBrand(ownerId, brandId); if (!session?.selectedDirectionId) return undefined; const db = await requireDb(); return (await db.select().from(brandDirections).where(eq(brandDirections.id, session.selectedDirectionId)).limit(1))[0] as BrandDirectionRow | undefined; }
+
+export async function getSelectedDirection(ownerId: number, brandId: number) {
+  const session = await getSessionByBrand(ownerId, brandId); if (!session?.selectedDirectionId) return undefined;
+  const db = await requireDb();
+  const row = (await db.select().from(brandDirections).where(eq(brandDirections.id, session.selectedDirectionId)).limit(1))[0];
+  return row ? withDirectionMeta(row) : undefined;
+}
