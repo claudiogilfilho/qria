@@ -2,6 +2,7 @@ export const ENV = {
   appId: process.env.VITE_APP_ID ?? process.env.APP_ID ?? "qria",
   cookieSecret: process.env.JWT_SECRET ?? "",
   databaseUrl: process.env.DATABASE_URL ?? "",
+  dbMode: (process.env.DB_MODE ?? (process.env.DATABASE_URL ? "mysql" : "memory")).toLowerCase(),
   oAuthServerUrl: process.env.OAUTH_SERVER_URL ?? "",
   ownerOpenId: process.env.OWNER_OPEN_ID ?? "",
   isProduction: process.env.NODE_ENV === "production",
