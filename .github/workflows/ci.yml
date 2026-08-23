@@ -57,6 +57,27 @@ jobs:
         run: |
           mkdir -p .ci
           pnpm build > .ci/build.log 2>&1
+      - name: Package portable preview
+        id: package_preview
+        if: always() && steps.build.outcome == 'success'
+        continue-on-error: true
+        run: |
+          rm -rf .deploy
+          mkdir -p .deploy/api
+          cp -R dist/public/. .deploy/
+          pnpm exec esbuild 'api/[...path].ts' --platform=node --packages=external --bundle --format=esm --outfile='.deploy/api/[...path].js'
+          cp package.json .deploy/package.json
+          cp pnpm-lock.yaml .deploy/pnpm-lock.yaml
+          cat > .deploy/vercel.json <<'EOF'
+          {
+            "$schema": "https://openapi.vercel.sh/vercel.json",
+            "installCommand": "pnpm install --frozen-lockfile",
+            "rewrites": [
+              { "source": "/api/(.*)", "destination": "/api/$1" },
+              { "source": "/((?!api/).*)", "destination": "/index.html" }
+            ]
+          }
+          EOF
       - name: Record validation result
         if: always()
         env:
@@ -67,13 +88,14 @@ jobs:
           TYPECHECK: ${{ steps.typecheck.outcome }}
           TESTS: ${{ steps.tests.outcome }}
           BUILD: ${{ steps.build.outcome }}
+          PACKAGE_PREVIEW: ${{ steps.package_preview.outcome }}
         run: |
           mkdir -p .ci
-          printf '{\n  "validated_sha": "%s",\n  "checkout": "%s",\n  "setup_node": "%s",\n  "setup_pnpm": "%s",\n  "install": "%s",\n  "typecheck": "%s",\n  "tests": "%s",\n  "build": "%s"\n}\n' "$GITHUB_SHA" "$CHECKOUT" "$SETUP_NODE" "$SETUP_PNPM" "$INSTALL" "$TYPECHECK" "$TESTS" "$BUILD" > .ci/qria-validation.json
+          printf '{\n  "validated_sha": "%s",\n  "checkout": "%s",\n  "setup_node": "%s",\n  "setup_pnpm": "%s",\n  "install": "%s",\n  "typecheck": "%s",\n  "tests": "%s",\n  "build": "%s",\n  "package_preview": "%s"\n}\n' "$GITHUB_SHA" "$CHECKOUT" "$SETUP_NODE" "$SETUP_PNPM" "$INSTALL" "$TYPECHECK" "$TESTS" "$BUILD" "$PACKAGE_PREVIEW" > .ci/qria-validation.json
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -f .ci/qria-validation.json .ci/*.log
-          git commit -m "ci: record QRIA validation result" || true
+          git add -f .ci/qria-validation.json .ci/*.log .deploy
+          git commit -m "ci: record QRIA validation and portable preview" || true
           git push
       - name: Fail when validation failed
         if: always()
@@ -85,6 +107,7 @@ jobs:
           TYPECHECK: ${{ steps.typecheck.outcome }}
           TESTS: ${{ steps.tests.outcome }}
           BUILD: ${{ steps.build.outcome }}
+          PACKAGE_PREVIEW: ${{ steps.package_preview.outcome }}
         run: |
           test "$CHECKOUT" = "success"
           test "$SETUP_NODE" = "success"
@@ -93,3 +116,4 @@ jobs:
           test "$TYPECHECK" = "success"
           test "$TESTS" = "success"
           test "$BUILD" = "success"
+          test "$PACKAGE_PREVIEW" = "success"
