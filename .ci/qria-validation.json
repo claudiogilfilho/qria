@@ -1,10 +1,11 @@
 {
-  "validated_sha": "fb6671d3d4bfd2b73484bbdcf7f55f6cf46c5550",
+  "validated_sha": "b553ddbc169364f7b396719b0b65cdaa64ea159a",
   "checkout": "success",
   "setup_node": "success",
   "setup_pnpm": "success",
   "install": "success",
   "typecheck": "success",
   "tests": "success",
-  "build": "success"
+  "build": "success",
+  "package_preview": "success"
 }
