@@ -5,10 +5,9 @@
 
 [1m[7m[36m RUN [39m[27m[22m [36mv2.1.9 [39m[90m/home/runner/work/qria/qria[39m
 
- [32m✓[39m server/brandRouter.test.ts [2m([22m[2m8 tests[22m[2m)[22m[90m 12[2mms[22m[39m
- [32m✓[39m server/brandRegeneration.test.ts [2m([22m[2m2 tests[22m[2m)[22m[90m 16[2mms[22m[39m
- [32m✓[39m server/brandFlow.integration.test.ts [2m([22m[2m1 test[22m[2m)[22m[90m 27[2mms[22m[39m
- [32m✓[39m server/brandGeneration.test.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 7[2mms[22m[39m
+ [32m✓[39m server/brandRouter.test.ts [2m([22m[2m8 tests[22m[2m)[22m[90m 19[2mms[22m[39m
+ [32m✓[39m server/brandFlow.integration.test.ts [2m([22m[2m1 test[22m[2m)[22m[90m 19[2mms[22m[39m
+ [32m✓[39m server/brandRegeneration.test.ts [2m([22m[2m2 tests[22m[2m)[22m[90m 15[2mms[22m[39m
 [90mstderr[2m | server/brandFallback.test.ts[2m > [22m[2mcontingência de geração[2m > [22m[2musa fallback imediato nas chamadas seguintes depois de detectar indisponibilidade externa
 [22m[39m[Brand generation] Structured direction service unavailable; using fallback directions Error: 412 Precondition Failed
     at Proxy.<anonymous> [90m(/home/runner/work/qria/qria/[39mserver/brandFallback.test.ts:5:11[90m)[39m
@@ -22,13 +21,14 @@
     at runSuite [90m(file:///home/runner/work/qria/qria/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@2.1.9/node_modules/[4m@vitest/runner[24m/dist/index.js:1205:15[90m)[39m
     at runSuite [90m(file:///home/runner/work/qria/qria/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@2.1.9/node_modules/[4m@vitest/runner[24m/dist/index.js:1205:15[90m)[39m
 
- [32m✓[39m server/brandFallback.test.ts [2m([22m[2m1 test[22m[2m)[22m[90m 15[2mms[22m[39m
+ [32m✓[39m server/brandFallback.test.ts [2m([22m[2m1 test[22m[2m)[22m[90m 14[2mms[22m[39m
+ [32m✓[39m server/brandGeneration.test.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 7[2mms[22m[39m
+ [32m✓[39m server/appTitle.test.ts [2m([22m[2m1 test[22m[2m)[22m[90m 8[2mms[22m[39m
  [32m✓[39m server/auth.logout.test.ts [2m([22m[2m1 test[22m[2m)[22m[90m 6[2mms[22m[39m
- [32m✓[39m server/appTitle.test.ts [2m([22m[2m1 test[22m[2m)[22m[90m 4[2mms[22m[39m
- [32m✓[39m server/db.test.ts [2m([22m[2m3 tests[22m[2m)[22m[90m 4[2mms[22m[39m
+ [32m✓[39m server/db.test.ts [2m([22m[2m3 tests[22m[2m)[22m[90m 3[2mms[22m[39m
 
 [2m Test Files [22m [1m[32m8 passed[39m[22m[90m (8)[39m
 [2m      Tests [22m [1m[32m21 passed[39m[22m[90m (21)[39m
-[2m   Start at [22m 21:01:03
-[2m   Duration [22m 1.21s[2m (transform 343ms, setup 0ms, collect 1.32s, tests 91ms, environment 2ms, prepare 722ms)[22m
+[2m   Start at [22m 21:01:50
+[2m   Duration [22m 1.14s[2m (transform 410ms, setup 0ms, collect 1.29s, tests 89ms, environment 1ms, prepare 659ms)[22m
 
