@@ -1,10 +1,10 @@
 {
-  "validated_sha": "4c8b377eb879e66450ea04ed3d1ed1da9fc738c3",
+  "validated_sha": "6f368223b0e350d0e02f1e5cdaeefdfb6e58e3de",
   "checkout": "success",
-  "setup_pnpm": "failure",
-  "setup_node": "failure",
-  "install": "skipped",
-  "typecheck": "skipped",
-  "tests": "skipped",
-  "build": "skipped"
+  "setup_node": "success",
+  "setup_pnpm": "success",
+  "install": "success",
+  "typecheck": "failure",
+  "tests": "failure",
+  "build": "failure"
 }
