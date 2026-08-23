@@ -1,7 +1,7 @@
 {
-  "validated_sha": "d268e8fff93e8f8ef7178bb492f29c5d6ac4e483",
+  "validated_sha": "cc4dea62cbda510cd730d4b1d5a5f65b0165d040",
   "install": "success",
   "typecheck": "success",
-  "tests": "failure",
+  "tests": "success",
   "build": "success"
 }
