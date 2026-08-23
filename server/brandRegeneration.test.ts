@@ -4,7 +4,9 @@ import type { TrpcContext } from "./_core/context";
 const db = vi.hoisted(() => ({
   getOwnedSession: vi.fn(),
   getOwnedBrand: vi.fn(),
+  getDirection: vi.fn(),
   getDirectionsForSession: vi.fn(),
+  getFavoriteDirections: vi.fn(),
   getLatestRound: vi.fn(),
   rejectLatestDirectionRound: vi.fn(),
   setSessionGenerating: vi.fn(),
@@ -18,6 +20,7 @@ const db = vi.hoisted(() => ({
   saveSessionAnswer: vi.fn(),
   saveRefinementNote: vi.fn(),
   selectDirection: vi.fn(),
+  setDirectionFavorite: vi.fn(),
   setSiteApproval: vi.fn(),
 }));
 
