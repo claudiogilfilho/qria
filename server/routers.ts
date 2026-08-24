@@ -5,7 +5,7 @@ import { z } from "zod";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
-import { generateBrandDirections, generateLogoConcepts } from "./brandGeneration";
+import { generateBrandDirectionsFive, generateLogoConceptsFive } from "./brandGenerationFive";
 import {
   createBrandWithSession,
   createDirectionRound,
@@ -57,13 +57,13 @@ async function generateRound(ownerId: number, sessionId: number, rejectCurrentRo
   await setSessionGenerating(ownerId, sessionId, nextRound);
 
   try {
-    const directions = await generateBrandDirections({
+    const directions = await generateBrandDirectionsFive({
       brand: { name: brand.name, description: brand.description, differentials: brand.differentials },
       answers: session.answers ?? {},
       priorDirectionTitles: existingDirections.map(direction => direction.title),
       refinementNote: requestedNote,
     });
-    const logoImageUrls = await generateLogoConcepts(directions);
+    const logoImageUrls = await generateLogoConceptsFive(directions);
     await createDirectionRound(sessionId, nextRound, directions.map((direction, index) => ({
       title: direction.title,
       content: direction as unknown as Record<string, unknown>,
