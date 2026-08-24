@@ -1,0 +1,37 @@
+name: Apply five creative directions patch
+
+on:
+  push:
+    branches:
+      - fix/five-creative-directions
+    paths:
+      - scripts/apply-five-directions.mjs
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/five-creative-directions
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Apply patch
+        run: node scripts/apply-five-directions.mjs
+      - name: Show diff
+        run: git diff --check && git diff
+      - name: Commit patch
+        run: |
+          if git diff --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- client/src/pages/BrandWorkspace.tsx server/brandGeneration.ts server/db.ts server/brandGeneration.test.ts server/brandRegeneration.test.ts server/brandFlow.integration.test.ts
+          git commit -m "fix: generate five more diverse brand directions"
+          git push origin HEAD:fix/five-creative-directions
