@@ -90,7 +90,7 @@ export default function BrandWorkspace() {
       onSuccess: () => {
         setIsRefinementOpen(false);
         setRefinementNote("");
-        toast.success("Vamos criar quatro novas direções a partir da sua observação.");
+        toast.success("Vamos criar cinco novas direções realmente diferentes a partir da sua observação.");
       },
     });
   }
@@ -142,7 +142,7 @@ export default function BrandWorkspace() {
           <QuizStep questionIndex={nextQuestionIndex} answers={answers} onChoose={answerQuestion} loading={answer.isPending} />
         ) : isBusy ? (
           <GeneratingState brandName={brand.name} />
-        ) : activeDirections.length === 4 ? (
+        ) : activeDirections.length === 5 ? (
           <DirectionChooser directions={activeDirections} onChoose={direction => choose.mutate({ sessionId: session!.id, directionId: direction.id })} onReject={() => regenerate.mutate({ sessionId: session!.id })} choosingId={choose.variables?.directionId} isChoosing={choose.isPending} isRegenerating={regenerate.isPending} />
         ) : (
           <ReadyToGenerate brandName={brand.name} onGenerate={() => generate.mutate({ sessionId: session!.id })} loading={generate.isPending} />
@@ -185,8 +185,8 @@ function ReadyToGenerate({ brandName, onGenerate, loading }: { brandName: string
       <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-champagne text-ink"><Sparkles className="h-6 w-6" /></div>
       <p className="mt-7 text-xs font-semibold uppercase tracking-[0.18em] text-champagne">Diagnóstico completo</p>
       <h2 className="mt-4 font-display text-5xl leading-none tracking-[-0.045em]">Agora, vamos dar forma a {brandName}.</h2>
-      <p className="mx-auto mt-5 max-w-xl text-sm leading-6 text-ivory/70">Vamos criar quatro territórios de identidade, cada um com conceito de logo, paleta, tipografia e uma ideia de presença digital.</p>
-      <Button disabled={loading} onClick={onGenerate} className="mt-8 h-12 rounded-full bg-champagne px-6 font-semibold text-ink hover:bg-[#d7cd8e]">{loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <>Gerar quatro direções <ArrowRight className="ml-2 h-4 w-4" /></>}</Button>
+      <p className="mx-auto mt-5 max-w-xl text-sm leading-6 text-ivory/70">Vamos criar cinco territórios de identidade, cada um com conceito de logo, paleta, tipografia e uma ideia de presença digital.</p>
+      <Button disabled={loading} onClick={onGenerate} className="mt-8 h-12 rounded-full bg-champagne px-6 font-semibold text-ink hover:bg-[#d7cd8e]">{loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <>Gerar cinco direções <ArrowRight className="ml-2 h-4 w-4" /></>}</Button>
     </section>
   );
 }
@@ -205,14 +205,14 @@ function GeneratingState({ brandName }: { brandName: string }) {
 function DirectionChooser({ directions, onChoose, onReject, choosingId, isChoosing, isRegenerating }: { directions: DirectionRow[]; onChoose: (direction: DirectionRow) => void; onReject: () => void; choosingId?: number; isChoosing: boolean; isRegenerating: boolean }) {
   return (
     <section className="mt-10">
-      <div className="max-w-2xl"><p className="eyebrow">Rodada de exploração</p><h2 className="mt-3 font-display text-5xl leading-[0.98] tracking-[-0.045em] text-ink">Qual direção traduz melhor a sua ambição?</h2><p className="mt-4 text-sm leading-6 text-muted-foreground">Cada alternativa é um território completo. Escolha A, B, C ou D. Se nenhuma fizer sentido, selecione E e nós abriremos quatro novas possibilidades.</p></div>
+      <div className="max-w-2xl"><p className="eyebrow">Rodada de exploração</p><h2 className="mt-3 font-display text-5xl leading-[0.98] tracking-[-0.045em] text-ink">Qual direção traduz melhor a sua ambição?</h2><p className="mt-4 text-sm leading-6 text-muted-foreground">Cada alternativa é um território completo. Escolha A, B, C, D ou E. Se nenhuma fizer sentido, gere uma nova rodada com cinco rotas deliberadamente diferentes das anteriores.</p></div>
       <div className="mt-8 grid gap-5 md:grid-cols-2">
         {directions.map(direction => <DirectionCard key={direction.id} direction={direction} onChoose={() => onChoose(direction)} isChoosing={isChoosing && choosingId === direction.id} />)}
       </div>
       <div className="mt-7 flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-stone-300 bg-white/45 px-5 py-5 text-center sm:flex-row sm:text-left">
-        <span className="grid h-9 w-9 place-items-center rounded-full bg-stone-200 text-xs font-semibold text-ink">E</span>
+        <span className="grid h-9 w-9 place-items-center rounded-full bg-stone-200 text-xs font-semibold text-ink"><RefreshCw className="h-4 w-4" /></span>
         <p className="text-sm text-muted-foreground"><strong className="font-semibold text-ink">Nenhuma destas direções.</strong> Vamos preservar o diagnóstico e buscar rotas realmente diferentes.</p>
-        <Button disabled={isRegenerating || isChoosing} onClick={onReject} variant="outline" className="shrink-0 rounded-full border-stone-300 bg-white text-ink hover:bg-sand">{isRegenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <><RefreshCw className="mr-2 h-4 w-4" /> Gerar novas</>}</Button>
+        <Button disabled={isRegenerating || isChoosing} onClick={onReject} variant="outline" className="shrink-0 rounded-full border-stone-300 bg-white text-ink hover:bg-sand">{isRegenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <><RefreshCw className="mr-2 h-4 w-4" /> Não gostei de nenhuma — gerar outras 5</>}</Button>
       </div>
     </section>
   );

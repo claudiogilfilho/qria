@@ -36,7 +36,7 @@ describe("diagnóstico de marca", () => {
       priorDirectionTitles: [],
       refinementNote: "Quero uma proposta mais humana e menos fria.",
     });
-    expect(directions).toHaveLength(4);
+    expect(directions).toHaveLength(5);
     expect(directions.every(direction => direction.palette.length === 4 && direction.site.sections.length >= 4)).toBe(true);
     expect(directions[0]?.essence).toContain("mais humana");
   });
