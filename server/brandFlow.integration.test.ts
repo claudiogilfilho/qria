@@ -132,7 +132,7 @@ describe("fluxo integrado de identidade", () => {
     expect(firstRound.every(direction => direction.status === "proposed")).toBe(true);
 
     const secondRound = await caller.brand.regenerate({ sessionId: started.sessionId });
-    expect(secondRound).toHaveLength(8);
+    expect(secondRound).toHaveLength(10);
     expect(secondRound.filter(direction => direction.status === "rejected")).toHaveLength(5);
     const newProposal = secondRound.find(direction => direction.round === 2 && direction.status === "proposed");
     expect(newProposal).toBeDefined();
