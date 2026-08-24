@@ -4,7 +4,7 @@ import NotFound from "@/pages/NotFound";
 import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
-import BrandWorkspace from "./pages/BrandWorkspaceFive";
+import BrandWorkspace from "./pages/BrandWorkspace";
 import Home from "./pages/Home";
 import NewBrand from "./pages/NewBrand";
 
