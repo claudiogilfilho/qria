@@ -22,8 +22,9 @@ describe("contingência de geração", () => {
     const second = await generateBrandDirections(input);
     const logos = await generateLogoConcepts(second);
 
-    expect(first).toHaveLength(4);
-    expect(second).toHaveLength(4);
+    expect(first).toHaveLength(5);
+    expect(second).toHaveLength(5);
+    expect(logos).toHaveLength(5);
     expect(logos.every(url => url.startsWith("data:image/svg+xml"))).toBe(true);
     expect(llm.invokeLLM).toHaveBeenCalledTimes(1);
     expect(llm.listLLMModels).toHaveBeenCalledTimes(1);

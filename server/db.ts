@@ -220,11 +220,11 @@ export async function restoreSessionAfterGenerationFailure(ownerId: number, sess
 
 export async function createDirectionRound(sessionId: number, round: number, directions: Array<{ title: string; content: Record<string, unknown>; logoImageUrl: string | null }>) {
   const db = await requireDb();
-  const optionKeys = ["A", "B", "C", "D"];
+  const optionKeys = ["A", "B", "C", "D", "E"];
   await db.insert(brandDirections).values(directions.map((direction, index) => ({
     sessionId,
     round,
-    optionKey: optionKeys[index] ?? "D",
+    optionKey: optionKeys[index] ?? "E",
     title: direction.title,
     content: direction.content,
     logoImageUrl: direction.logoImageUrl,

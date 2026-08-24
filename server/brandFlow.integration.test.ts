@@ -55,7 +55,7 @@ const db = vi.hoisted(() => ({
   }),
   restoreSessionAfterGenerationFailure: vi.fn(),
   createDirectionRound: vi.fn(async (sessionId: number, round: number, directions: Array<{ title: string; content: Record<string, unknown>; logoImageUrl: string | null }>) => {
-    directions.forEach((direction, index) => state.directions.push({ id: state.directions.length + 1, sessionId, round, optionKey: ["A", "B", "C", "D"][index]!, ...direction, status: "proposed" }));
+    directions.forEach((direction, index) => state.directions.push({ id: state.directions.length + 1, sessionId, round, optionKey: ["A", "B", "C", "D", "E"][index]!, ...direction, status: "proposed" }));
     const session = state.sessions.find(item => item.id === sessionId)!;
     session.status = "in_progress";
     session.currentRound = round;
@@ -80,7 +80,7 @@ const db = vi.hoisted(() => ({
 const generation = vi.hoisted(() => ({
   generateBrandDirections: vi.fn(async () => {
     state.directionRun += 1;
-    return ["A", "B", "C", "D"].map((key, index) => ({
+    return ["A", "B", "C", "D", "E"].map((key, index) => ({
       title: `Direção ${state.directionRun}-${key}`,
       essence: "Essência estratégica",
       visualStyle: "Visual editorial",
@@ -128,12 +128,12 @@ describe("fluxo integrado de identidade", () => {
     }
 
     const firstRound = await caller.brand.generate({ sessionId: started.sessionId });
-    expect(firstRound).toHaveLength(4);
+    expect(firstRound).toHaveLength(5);
     expect(firstRound.every(direction => direction.status === "proposed")).toBe(true);
 
     const secondRound = await caller.brand.regenerate({ sessionId: started.sessionId });
-    expect(secondRound).toHaveLength(8);
-    expect(secondRound.filter(direction => direction.status === "rejected")).toHaveLength(4);
+    expect(secondRound).toHaveLength(10);
+    expect(secondRound.filter(direction => direction.status === "rejected")).toHaveLength(5);
     const newProposal = secondRound.find(direction => direction.round === 2 && direction.status === "proposed");
     expect(newProposal).toBeDefined();
 
